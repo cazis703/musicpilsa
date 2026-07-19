@@ -23,9 +23,19 @@ const config: Config = {
             transform: "scale(1)",
           },
         },
+        "spin-slow": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "glow-in": "glow-in 300ms ease-out",
+        "spin-slow": "spin-slow 4s linear infinite",
+        marquee: "marquee 12s linear infinite",
       },
     },
   },

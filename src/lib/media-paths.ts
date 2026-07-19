@@ -15,6 +15,39 @@ export const AUDIO_PATHS = [
   "/media/audio/where-hope-begins.mp3",
 ] as const;
 
+export interface AudioTrackMeta {
+  title: string;
+  artist: string;
+  license: string;
+}
+
+// 파일명 기반 추정치. 정확한 아티스트/라이선스 표기가 확인되면 이 값을 갱신할 것.
+export const AUDIO_TRACK_META: Record<(typeof AUDIO_PATHS)[number], AudioTrackMeta> = {
+  "/media/audio/earth.mp3": { title: "Earth", artist: "Daniel Magen", license: "License unconfirmed" },
+  "/media/audio/fireflies.mp3": { title: "Fireflies", artist: "Unknown Artist", license: "License unconfirmed" },
+  "/media/audio/our-home.mp3": { title: "Our Home", artist: "Unknown Artist", license: "License unconfirmed" },
+  "/media/audio/strangers-instrumental.mp3": {
+    title: "Strangers (Instrumental)",
+    artist: "Alex Hager",
+    license: "License unconfirmed",
+  },
+  "/media/audio/where-hope-begins.mp3": {
+    title: "Where Hope Begins",
+    artist: "Lumine Wave",
+    license: "License unconfirmed",
+  },
+};
+
+export function getAudioTrackMeta(path: string): AudioTrackMeta {
+  return (
+    AUDIO_TRACK_META[path as (typeof AUDIO_PATHS)[number]] ?? {
+      title: "Unknown Track",
+      artist: "Unknown Artist",
+      license: "License unconfirmed",
+    }
+  );
+}
+
 export const VIDEO_READY_TIMEOUT_MS = 3000;
 
 export function pickRandomPath(paths: readonly string[], excludePath: string | null): string {

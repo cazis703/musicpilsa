@@ -24,11 +24,11 @@ export default function SentenceTypingArea({ sentence, charStates }: SentenceTyp
 
   return (
     <div
-      className="relative max-w-3xl px-8 py-10 text-center leading-relaxed break-keep"
+      className="relative px-8 py-10 text-center leading-relaxed"
       role="group"
       aria-label="위로 문장 따라 쓰기"
     >
-      <p className="text-2xl md:text-3xl font-medium tracking-wide drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
+      <p className="whitespace-nowrap text-2xl font-medium tracking-wide drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] md:text-3xl">
         {visualCharStates.map((charState, index) => (
           <TypingChar
             key={`${sentence}-${index}`}

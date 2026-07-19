@@ -11,3 +11,5 @@ next-env.d.ts
 # 이전 스코프 백업 (참고용 로컬 백업, 저장소에는 불필요)
 claudedocs_old_20260719/
 src_old_20260719/
+.vercel
+.env*
