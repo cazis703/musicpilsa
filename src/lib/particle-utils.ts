@@ -1,6 +1,4 @@
 export const GLOW_DURATION_MS = 300;
-export const SETTLED_DURATION_MS = 4500;
-export const FADE_DURATION_MS = 700;
 
 export const PARTICLE_POOL_SIZE = 300;
 export const PARTICLES_PER_CHAR = 8;

@@ -61,3 +61,9 @@ export function pickNextPath(paths: readonly string[], currentPath: string): str
   const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % paths.length;
   return paths[nextIndex];
 }
+
+export function pickPreviousPath(paths: readonly string[], currentPath: string): string {
+  const currentIndex = paths.indexOf(currentPath);
+  const previousIndex = currentIndex === -1 ? 0 : (currentIndex - 1 + paths.length) % paths.length;
+  return paths[previousIndex];
+}

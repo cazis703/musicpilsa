@@ -22,13 +22,16 @@ export function SpeakerOnIcon({ className }: IconProps) {
 export function SpeakerMutedIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      {/* SpeakerOnIcon과 동일한 모양(콘 + 음량 파동)을 그대로 유지하고, 그 위에
+          NoteMutedIcon과 동일한 좌상단→우하단 대각선 취소선만 추가한다. */}
       <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor" />
       <path
-        d="M16 9.5 20.5 14M20.5 9.5 16 14"
+        d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
       />
+      <path d="M5 5.5 19.5 19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -69,6 +72,15 @@ export function SkipNextIcon({ className }: IconProps) {
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M6 5v14l10-7L6 5Z" fill="currentColor" />
       <path d="M18 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function SkipPreviousIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M18 5v14l-10-7L18 5Z" fill="currentColor" />
+      <path d="M6 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -125,6 +137,86 @@ export function MirrorIcon({ className }: IconProps) {
       <ellipse cx="12" cy="10.5" rx="6" ry="7.5" stroke="currentColor" strokeWidth="1.5" />
       <path d="M9 20.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M12 18v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function PlayIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M7 5v14l12-7L7 5Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function PauseIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" />
+      <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function NoteIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M9 16.5V5.5L19 4v11"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="7" cy="17" r="2.5" fill="currentColor" />
+      <circle cx="17" cy="15.5" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function NoteMutedIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M9 16.5V5.5L19 4v11"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="7" cy="17" r="2.5" fill="currentColor" />
+      <circle cx="17" cy="15.5" r="2.5" fill="currentColor" />
+      {/* 음표 위에 국소 X를 겹치면 음표 획과 겹쳐 지저분해 보여서, 아이콘 전체를
+          가로지르는 대각선 취소선으로 대신한다. */}
+      <path d="M5 5.5 19.5 19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M6 9l6 6 6-6"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function RefreshIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M4 12a8 8 0 0 1 13.66-5.66M20 12a8 8 0 0 1-13.66 5.66"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path d="M18 3v4h-4M6 21v-4h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

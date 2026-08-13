@@ -6,6 +6,7 @@ import {
   VIDEO_PATHS,
   VIDEO_READY_TIMEOUT_MS,
   pickNextPath,
+  pickPreviousPath,
   pickRandomPath,
 } from "@/lib/media-paths";
 import type { MediaLoadStatus, UseBackgroundMediaReturn } from "@/types/media";
@@ -110,5 +111,19 @@ export function useBackgroundMedia(): UseBackgroundMediaReturn {
     setAudioSrc((prev) => pickNextPath(AUDIO_PATHS, prev));
   }, []);
 
-  return { videoStatus, audioStatus, videoRef, audioRef, videoSrc, audioSrc, nextVideo, nextAudio };
+  const previousAudio = useCallback(() => {
+    setAudioSrc((prev) => pickPreviousPath(AUDIO_PATHS, prev));
+  }, []);
+
+  return {
+    videoStatus,
+    audioStatus,
+    videoRef,
+    audioRef,
+    videoSrc,
+    audioSrc,
+    nextVideo,
+    nextAudio,
+    previousAudio,
+  };
 }

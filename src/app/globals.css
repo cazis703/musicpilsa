@@ -7,3 +7,112 @@ body {
   background-color: #020617;
   min-height: 100vh;
 }
+
+/* 볼륨 슬라이더(배경음악/효과음 공용): 핸들은 기본적으로 숨겨져 있다가 hover/focus 시에만
+   커지며 나타나고, 마우스아웃/블러 시 다시 작아지며 사라진다. 핸들 바깥의 발광 링은
+   box-shadow로 표현하며, 드래그 중(active)에는 더 크게 퍼진다. 트랙은 채워진 부분(밝게)과
+   안 채워진 부분(흐리게) 모두 "채워진 막대" 형태이며 테두리선은 사용하지 않는다. */
+.volume-slider {
+  /* 너비는 컴포넌트 쪽 Tailwind 클래스(w-24 shrink-0)가 전담한다 — 여기서 width를
+     지정하면(특히 100%) 이 클래스가 @tailwind utilities보다 뒤에 로드되어 우선순위가
+     같은 상황에서 w-24를 덮어써버리고, 그러면 슬라이더가 부모 너비(=브라우저 너비)에
+     따라 늘었다 줄었다 하게 된다. */
+  --volume-fill: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  border: none;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.85) var(--volume-fill),
+    rgba(255, 255, 255, 0.22) var(--volume-fill),
+    rgba(255, 255, 255, 0.22) 100%
+  );
+}
+
+.volume-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.volume-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 9999px;
+  background: #ffffff;
+  opacity: 0;
+  transform: scale(0.4);
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  transition: opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: #ffffff;
+  opacity: 0;
+  transform: scale(0.4);
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  transition: opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.volume-slider:hover::-webkit-slider-thumb,
+.volume-slider:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.18);
+}
+
+.volume-slider:hover::-moz-range-thumb,
+.volume-slider:focus-visible::-moz-range-thumb {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.18);
+}
+
+.volume-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.24);
+}
+
+.volume-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.24);
+}
+
+/* 타이핑 영역에 직접 그리는 커서의 깜빡임. */
+@keyframes caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-caret-blink {
+  animation: caret-blink 1s step-end infinite;
+}

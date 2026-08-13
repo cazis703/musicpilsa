@@ -1,4 +1,4 @@
-import type { SentenceItem, SentenceSetId, SentenceSetMeta } from "@/types/sentence";
+import type { SentenceItem } from "@/types/sentence";
 
 export function pickNextSentence(
   sentences: SentenceItem[],
@@ -11,10 +11,4 @@ export function pickNextSentence(
 
   const index = Math.floor(Math.random() * candidates.length);
   return candidates[index];
-}
-
-export function pickNextSetId(sets: SentenceSetMeta[], currentSetId: SentenceSetId): SentenceSetId {
-  const currentIndex = sets.findIndex((set) => set.id === currentSetId);
-  const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % sets.length;
-  return sets[nextIndex].id;
 }
