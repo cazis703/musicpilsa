@@ -2,10 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
 html,
 body {
   background-color: #020617;
   min-height: 100vh;
+  font-family: var(--font-sans);
 }
 
 /* 볼륨 슬라이더(배경음악/효과음 공용): 핸들은 기본적으로 숨겨져 있다가 hover/focus 시에만

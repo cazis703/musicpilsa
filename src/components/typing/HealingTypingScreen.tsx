@@ -11,6 +11,7 @@ import ThemeSwitcher from "@/components/typing/ThemeSwitcher";
 import { SENTENCE_SET_META } from "@/data/sentences";
 import { attemptAutoplay } from "@/hooks/useAudioControls";
 import { useBackgroundMedia } from "@/hooks/useBackgroundMedia";
+import { useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
 import { useSentenceTyping } from "@/hooks/useSentenceTyping";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { clampTypedValue } from "@/lib/typing-judge";
@@ -21,8 +22,23 @@ export default function HealingTypingScreen() {
     useSoundEffects();
 
   const {
+    fontSizeRem,
+    increaseFontSize,
+    decreaseFontSize,
+    resetFontSize,
+    fontWeight,
+    increaseFontWeight,
+    decreaseFontWeight,
+    resetFontWeight,
+    fontFamily,
+    setFontFamily,
+    fontStyle,
+  } = useFontSettings();
+
+  const {
     currentSentence,
     charStates,
+    cursorIndex,
     handleInputValue,
     confirmIfComplete,
     resetCurrentSentence,
@@ -88,6 +104,44 @@ export default function HealingTypingScreen() {
     [playClickSound, setActiveSet, focusTypingInput]
   );
 
+  const handleIncreaseFontSize = useCallback(() => {
+    playClickSound();
+    increaseFontSize();
+  }, [playClickSound, increaseFontSize]);
+
+  const handleDecreaseFontSize = useCallback(() => {
+    playClickSound();
+    decreaseFontSize();
+  }, [playClickSound, decreaseFontSize]);
+
+  const handleResetFontSize = useCallback(() => {
+    playClickSound();
+    resetFontSize();
+  }, [playClickSound, resetFontSize]);
+
+  const handleIncreaseFontWeight = useCallback(() => {
+    playClickSound();
+    increaseFontWeight();
+  }, [playClickSound, increaseFontWeight]);
+
+  const handleDecreaseFontWeight = useCallback(() => {
+    playClickSound();
+    decreaseFontWeight();
+  }, [playClickSound, decreaseFontWeight]);
+
+  const handleResetFontWeight = useCallback(() => {
+    playClickSound();
+    resetFontWeight();
+  }, [playClickSound, resetFontWeight]);
+
+  const handleSelectFontFamily = useCallback(
+    (id: FontFamilyId) => {
+      playClickSound();
+      setFontFamily(id);
+    },
+    [playClickSound, setFontFamily]
+  );
+
   // 같은 문장을 처음 상태로 되돌린다. 판정 상태(useSentenceTyping)뿐 아니라 실제 <input> DOM
   // 값도 비워야 하는데, 그 입력창이 uncontrolled라 여기서 직접 value를 지워준다.
   const handleRewrite = useCallback(() => {
@@ -146,16 +200,23 @@ export default function HealingTypingScreen() {
 
   // <input type="text">는 Enter 키만으로는 value가 바뀌지 않아 onInput이 발생하지 않으므로,
   // 문장을 이미 다 입력한 상태에서 Enter를 눌러도 다음 문장으로 넘어갈 수 있도록 별도 처리한다.
-  // Esc는 "다시쓰기" 단축키.
+  // 문장을 다 친 상태(커서가 끝에 도달)에서는 스페이스바도 동일하게 "전송" 단축키로 취급하고
+  // 기본 동작(공백 삽입)을 막는다. 문장이 아직 끝나지 않았을 때는 스페이스가 문장 중간의
+  // 정타(단어 사이 공백)로 쓰일 수 있으므로 그대로 입력되게 둔다. Esc는 "다시쓰기" 단축키.
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Enter") {
         confirmIfComplete();
+      } else if (event.key === " " || event.code === "Space") {
+        if (cursorIndex >= currentSentence.text.length) {
+          event.preventDefault();
+          confirmIfComplete();
+        }
       } else if (event.key === "Escape") {
         handleRewrite();
       }
     },
-    [confirmIfComplete, handleRewrite]
+    [confirmIfComplete, handleRewrite, cursorIndex, currentSentence.text.length]
   );
 
   return (
@@ -172,6 +233,7 @@ export default function HealingTypingScreen() {
           sentence={currentSentence.text}
           charStates={charStates}
           inputRef={typingInputRef}
+          fontStyle={fontStyle}
           onInput={handleInput}
           onCompositionEnd={handleCompositionEnd}
           onKeyDown={handleKeyDown}
@@ -200,6 +262,16 @@ export default function HealingTypingScreen() {
         onToggleSfxMute={toggleSfxMute}
         keySwitchType={keySwitchType}
         onKeySwitchTypeChange={setKeySwitchType}
+        fontSizeRem={fontSizeRem}
+        onIncreaseFontSize={handleIncreaseFontSize}
+        onDecreaseFontSize={handleDecreaseFontSize}
+        onResetFontSize={handleResetFontSize}
+        fontWeight={fontWeight}
+        onIncreaseFontWeight={handleIncreaseFontWeight}
+        onDecreaseFontWeight={handleDecreaseFontWeight}
+        onResetFontWeight={handleResetFontWeight}
+        fontFamily={fontFamily}
+        onSelectFontFamily={handleSelectFontFamily}
       />
     </main>
   );

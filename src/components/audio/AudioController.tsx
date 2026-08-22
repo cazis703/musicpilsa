@@ -5,6 +5,7 @@ import NowPlaying from "@/components/audio/NowPlaying";
 import PlayPauseButton from "@/components/audio/PlayPauseButton";
 import SfxTypeDropdown from "@/components/audio/SfxTypeDropdown";
 import VolumeSlider from "@/components/audio/VolumeSlider";
+import FontSettingsPanel from "@/components/typing/FontSettingsPanel";
 import {
   NoteIcon,
   NoteMutedIcon,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/icons";
 import { getAudioTrackMeta } from "@/lib/media-paths";
 import { KEY_SWITCH_OPTIONS, type KeySwitchType } from "@/data/keySwitches";
+import type { FontFamilyId } from "@/hooks/useFontSettings";
 import type { MediaLoadStatus } from "@/types/media";
 
 interface AudioControllerProps {
@@ -31,6 +33,16 @@ interface AudioControllerProps {
   onToggleSfxMute: () => void;
   keySwitchType: KeySwitchType;
   onKeySwitchTypeChange: (type: KeySwitchType) => void;
+  fontSizeRem: number;
+  onIncreaseFontSize: () => void;
+  onDecreaseFontSize: () => void;
+  onResetFontSize: () => void;
+  fontWeight: number;
+  onIncreaseFontWeight: () => void;
+  onDecreaseFontWeight: () => void;
+  onResetFontWeight: () => void;
+  fontFamily: FontFamilyId;
+  onSelectFontFamily: (id: FontFamilyId) => void;
 }
 
 export default function AudioController({
@@ -46,6 +58,16 @@ export default function AudioController({
   onToggleSfxMute,
   keySwitchType,
   onKeySwitchTypeChange,
+  fontSizeRem,
+  onIncreaseFontSize,
+  onDecreaseFontSize,
+  onResetFontSize,
+  fontWeight,
+  onIncreaseFontWeight,
+  onDecreaseFontWeight,
+  onResetFontWeight,
+  fontFamily,
+  onSelectFontFamily,
 }: AudioControllerProps) {
   const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
 
@@ -149,6 +171,22 @@ export default function AudioController({
         onChange={onKeySwitchTypeChange}
         ariaLabel="타건음 스위치 종류"
         tooltip="타이핑음"
+      />
+
+      <span className="h-5 w-px shrink-0 bg-white/20" aria-hidden="true" />
+
+      {/* g. 글자 크기·굵기·글꼴 설정 */}
+      <FontSettingsPanel
+        fontSizeRem={fontSizeRem}
+        onIncreaseFontSize={onIncreaseFontSize}
+        onDecreaseFontSize={onDecreaseFontSize}
+        onResetFontSize={onResetFontSize}
+        fontWeight={fontWeight}
+        onIncreaseFontWeight={onIncreaseFontWeight}
+        onDecreaseFontWeight={onDecreaseFontWeight}
+        onResetFontWeight={onResetFontWeight}
+        fontFamily={fontFamily}
+        onSelectFontFamily={onSelectFontFamily}
       />
     </div>
   );

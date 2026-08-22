@@ -13,6 +13,7 @@ interface SentenceTypingAreaProps {
   sentence: string;
   charStates: CharState[];
   inputRef: React.RefObject<HTMLInputElement>;
+  fontStyle: React.CSSProperties;
   onInput: (event: React.FormEvent<HTMLInputElement>) => void;
   onCompositionEnd: (event: React.CompositionEvent<HTMLInputElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -20,9 +21,10 @@ interface SentenceTypingAreaProps {
 }
 
 // 목표 문장 레이어와 입력창이 반드시 같은 폰트 크기/굵기/자간으로 렌더링되어야
-// 글자 위치가 어긋나지 않는다. 두 곳에서 각자 클래스를 나열하지 않고 이 상수 하나만
-// 공유해서, 나중에 스타일을 바꿀 때도 서로 따로 놀 위험이 없게 한다.
-const TYPING_FONT_CLASS = "text-2xl font-medium tracking-wide md:text-3xl";
+// 글자 위치가 어긋나지 않는다. 자간(tracking-wide)은 고정 클래스로 공유하고,
+// 크기/굵기/패밀리는 사용자가 조절 가능하므로 fontStyle prop(동일 객체)을 두 요소에
+// 그대로 전달해 서로 따로 놀 위험이 없게 한다.
+const TYPING_FONT_CLASS = "tracking-wide";
 
 interface CaretRect {
   left: number;
@@ -45,6 +47,7 @@ export default function SentenceTypingArea({
   sentence,
   charStates,
   inputRef,
+  fontStyle,
   onInput,
   onCompositionEnd,
   onKeyDown,
@@ -92,7 +95,8 @@ export default function SentenceTypingArea({
     updateCaretRect();
     window.addEventListener("resize", updateCaretRect);
     return () => window.removeEventListener("resize", updateCaretRect);
-  }, [charStates, sentence]);
+    // fontStyle이 바뀌면(크기/굵기/패밀리 조절) 글자 폭이 달라지므로 커서를 다시 계산해야 한다.
+  }, [charStates, sentence, fontStyle]);
 
   return (
     <div ref={containerRef} className="relative px-8 py-10" role="group">
@@ -101,6 +105,7 @@ export default function SentenceTypingArea({
           문장 전체를 한 번에 안내한다. */}
       <p
         className={`whitespace-nowrap text-left leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] ${TYPING_FONT_CLASS}`}
+        style={fontStyle}
         aria-hidden="true"
       >
         {visualCharStates.map((charState, index) => (
@@ -146,6 +151,7 @@ export default function SentenceTypingArea({
         spellCheck={false}
         aria-label={`위로 문장 입력: ${sentence}`}
         className={`absolute inset-0 m-0 whitespace-nowrap border-0 bg-transparent p-0 text-left leading-relaxed text-transparent caret-transparent outline-none ${TYPING_FONT_CLASS}`}
+        style={fontStyle}
       />
 
       <CharParticleCanvas handleRef={particleHandleRef} />
