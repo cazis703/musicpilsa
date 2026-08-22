@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { pickNextSentence } from "@/lib/sentence-utils";
+import { drawFromShuffleQueue } from "@/lib/sentence-utils";
 import { isCorrectChar } from "@/lib/typing-judge";
 import { SENTENCE_SETS, getSentenceSet } from "@/data/sentences";
 import type { CharState } from "@/types/typing";
@@ -56,21 +56,30 @@ export function useSentenceTyping(
   // 오타 글자 수만 늘거나 줄 때도 갱신된다.
   const typoLengthRef = useRef(0);
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set별 "아직 이번 순회에서 안 보여준 문장" 큐 — 큐가 비면 그 Set의 20문장을 다시
+  // 섞어 채운다(셔플백 방식). Set을 옮겨도 각 Set의 큐는 독립적으로 유지된다.
+  const shuffleQueuesRef = useRef<Partial<Record<SentenceSetId, SentenceItem[]>>>({});
 
   // 자동 전환/건너뛰기/Set 변경 3곳 모두 "문장을 어떻게 바꾸는가"는 동일한 절차이므로
   // 하나의 공용 함수로 묶어 재사용한다 (previousId를 인자로 받아 연속 반복만 방지).
-  const goToNextSentence = useCallback((sentences: SentenceItem[], previousId: number | null) => {
-    const next = pickNextSentence(sentences, previousId);
-    setCurrentSentence(next);
-    setCharStates(createInitialCharStates(next.text));
-    cursorIndexRef.current = 0;
-    typoLengthRef.current = 0;
-    setCursorIndex(0);
-    return next;
-  }, []);
+  const goToNextSentence = useCallback(
+    (setId: SentenceSetId, sentences: SentenceItem[], previousId: number | null) => {
+      const currentQueue = shuffleQueuesRef.current[setId] ?? [];
+      const { sentence: next, remainingQueue } = drawFromShuffleQueue(currentQueue, sentences, previousId);
+      shuffleQueuesRef.current[setId] = remainingQueue;
+
+      setCurrentSentence(next);
+      setCharStates(createInitialCharStates(next.text));
+      cursorIndexRef.current = 0;
+      typoLengthRef.current = 0;
+      setCursorIndex(0);
+      return next;
+    },
+    []
+  );
 
   useEffect(() => {
-    goToNextSentence(SENTENCE_SETS[0].sentences, INITIAL_SENTENCE.id);
+    goToNextSentence(INITIAL_SET_ID, SENTENCE_SETS[0].sentences, INITIAL_SENTENCE.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -91,7 +100,7 @@ export function useSentenceTyping(
       setActiveSetId(setId);
       const nextSentences = getSentenceSet(setId).sentences;
       // 다른 Set으로 넘어가는 순간이므로 이전 Set 기준의 previousSentenceId 제약은 적용하지 않는다.
-      goToNextSentence(nextSentences, null);
+      goToNextSentence(setId, nextSentences, null);
     },
     [goToNextSentence]
   );
@@ -102,7 +111,7 @@ export function useSentenceTyping(
       advanceTimeoutRef.current = null;
     }
     const currentSentences = getSentenceSet(activeSetId).sentences;
-    goToNextSentence(currentSentences, currentSentence.id);
+    goToNextSentence(activeSetId, currentSentences, currentSentence.id);
   }, [activeSetId, currentSentence.id, goToNextSentence]);
 
   // 매 입력 이벤트마다(한글 조합 중간에도) 즉시 판정한다 — 이미 완성된 글자들의 매칭/
@@ -207,7 +216,7 @@ export function useSentenceTyping(
         advanceTimeoutRef.current = setTimeout(() => {
           advanceTimeoutRef.current = null;
           const currentSentences = getSentenceSet(activeSetId).sentences;
-          goToNextSentence(currentSentences, completedSentenceId);
+          goToNextSentence(activeSetId, currentSentences, completedSentenceId);
         }, NEXT_SENTENCE_DELAY_MS);
       }
     },
@@ -236,7 +245,7 @@ export function useSentenceTyping(
       advanceTimeoutRef.current = null;
     }
     const currentSentences = getSentenceSet(activeSetId).sentences;
-    goToNextSentence(currentSentences, currentSentence.id);
+    goToNextSentence(activeSetId, currentSentences, currentSentence.id);
   }, [activeSetId, currentSentence.id, currentSentence.text.length, goToNextSentence]);
 
   return {
