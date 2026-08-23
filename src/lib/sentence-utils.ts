@@ -1,4 +1,12 @@
-import type { SentenceItem } from "@/types/sentence";
+import type { SentenceItem, SentenceTone } from "@/types/sentence";
+
+// 선택된 톤에 맞는 실제 표시/판정 텍스트를 고른다. 하다체/습니다체 버전이 없는 문장
+// (위로 Set 전체, 또는 아직 변환되지 않은 문장)은 항상 해요체(text)로 대체된다.
+export function resolveSentenceText(sentence: SentenceItem, tone: SentenceTone): string {
+  if (tone === "formal") return sentence.textFormal ?? sentence.text;
+  if (tone === "polite") return sentence.textPolite ?? sentence.text;
+  return sentence.text;
+}
 
 // Fisher-Yates 셔플 — 원본 배열을 변형하지 않고 새 배열을 반환한다.
 function shuffle(sentences: SentenceItem[]): SentenceItem[] {

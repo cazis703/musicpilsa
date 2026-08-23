@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { drawFromShuffleQueue } from "@/lib/sentence-utils";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { drawFromShuffleQueue, resolveSentenceText } from "@/lib/sentence-utils";
 import { isCorrectChar } from "@/lib/typing-judge";
 import { SENTENCE_SETS, getSentenceSet } from "@/data/sentences";
 import type { CharState } from "@/types/typing";
-import type { SentenceItem, SentenceSetId } from "@/types/sentence";
+import type { SentenceItem, SentenceSetId, SentenceTone } from "@/types/sentence";
 
 const NEXT_SENTENCE_DELAY_MS = 800;
 // 하이드레이션 안전성: Set과 문장 모두 고정 리터럴(첫 번째 Set, 그 안의 첫 문장)로 초기화하고,
@@ -26,6 +26,7 @@ function createInitialCharStates(text: string): CharState[] {
 
 export interface UseSentenceTypingReturn {
   currentSentence: SentenceItem;
+  targetText: string;
   charStates: CharState[];
   cursorIndex: number;
   handleInputValue: (fullValue: string, isComposing?: boolean) => void;
@@ -37,11 +38,14 @@ export interface UseSentenceTypingReturn {
 }
 
 export function useSentenceTyping(
+  tone: SentenceTone,
   onCharTyped?: () => void,
   onSentenceComplete?: () => void
 ): UseSentenceTypingReturn {
   const [activeSetId, setActiveSetId] = useState<SentenceSetId>(INITIAL_SET_ID);
   const [currentSentence, setCurrentSentence] = useState<SentenceItem>(INITIAL_SENTENCE);
+  // 판정/표시에 실제로 쓰이는 텍스트 — 선택된 톤에 맞는 버전(없으면 해요체로 대체).
+  const targetText = useMemo(() => resolveSentenceText(currentSentence, tone), [currentSentence, tone]);
   const [charStates, setCharStates] = useState<CharState[]>(() =>
     createInitialCharStates(INITIAL_SENTENCE.text)
   );
@@ -69,19 +73,38 @@ export function useSentenceTyping(
       shuffleQueuesRef.current[setId] = remainingQueue;
 
       setCurrentSentence(next);
-      setCharStates(createInitialCharStates(next.text));
+      setCharStates(createInitialCharStates(resolveSentenceText(next, tone)));
       cursorIndexRef.current = 0;
       typoLengthRef.current = 0;
       setCursorIndex(0);
       return next;
     },
-    []
+    [tone]
   );
 
   useEffect(() => {
     goToNextSentence(INITIAL_SET_ID, SENTENCE_SETS[0].sentences, INITIAL_SENTENCE.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 톤이 바뀌면(설정 패널 조작) 지금 보여주던 문장은 그대로 두되, 톤에 맞는 텍스트로
+  // 다시 시작한다 — 문장 자체를 새로 뽑지 않는다(사용자가 톤만 바꾸려 한 것이므로).
+  const isFirstToneRenderRef = useRef(true);
+  useEffect(() => {
+    if (isFirstToneRenderRef.current) {
+      isFirstToneRenderRef.current = false;
+      return;
+    }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+    setCharStates(createInitialCharStates(targetText));
+    cursorIndexRef.current = 0;
+    typoLengthRef.current = 0;
+    setCursorIndex(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tone]);
 
   useEffect(() => {
     return () => {
@@ -134,7 +157,7 @@ export function useSentenceTyping(
   // 하기 때문). 여기서는 판정/시각 상태 갱신만 담당한다.
   const handleInputValue = useCallback(
     (fullValue: string, isComposing = false) => {
-      const target = currentSentence.text;
+      const target = targetText;
       const effectiveLength = Math.min(fullValue.length, target.length);
       // 지금 한창 조합 중인 마지막 글자의 위치 (없으면 -1).
       const composingIndex = isComposing && effectiveLength > 0 ? effectiveLength - 1 : -1;
@@ -220,7 +243,7 @@ export function useSentenceTyping(
         }, NEXT_SENTENCE_DELAY_MS);
       }
     },
-    [activeSetId, currentSentence.id, currentSentence.text, goToNextSentence, onCharTyped, onSentenceComplete]
+    [activeSetId, currentSentence.id, targetText, goToNextSentence, onCharTyped, onSentenceComplete]
   );
 
   // 다음 문장으로 넘어가지 않고 같은 문장을 처음 상태로 되돌린다("다시쓰기" 버튼/Esc 단축키용).
@@ -229,27 +252,28 @@ export function useSentenceTyping(
       clearTimeout(advanceTimeoutRef.current);
       advanceTimeoutRef.current = null;
     }
-    setCharStates(createInitialCharStates(currentSentence.text));
+    setCharStates(createInitialCharStates(targetText));
     cursorIndexRef.current = 0;
     typoLengthRef.current = 0;
     setCursorIndex(0);
-  }, [currentSentence.text]);
+  }, [targetText]);
 
   // 문장 끝까지 입력한 상태(오타가 남아있어도, 자동 전환 대기 중)에서 Enter 키를 누르면,
   // 800ms 대기를 기다리지 않고 즉시 다음 문장으로 넘어간다. <input type="text">는
   // Enter 키 자체로 value가 바뀌지 않으므로(input 이벤트 미발생) 별도 트리거가 필요하다.
   const confirmIfComplete = useCallback(() => {
-    if (cursorIndexRef.current < currentSentence.text.length) return;
+    if (cursorIndexRef.current < targetText.length) return;
     if (advanceTimeoutRef.current) {
       clearTimeout(advanceTimeoutRef.current);
       advanceTimeoutRef.current = null;
     }
     const currentSentences = getSentenceSet(activeSetId).sentences;
     goToNextSentence(activeSetId, currentSentences, currentSentence.id);
-  }, [activeSetId, currentSentence.id, currentSentence.text.length, goToNextSentence]);
+  }, [activeSetId, currentSentence.id, targetText.length, goToNextSentence]);
 
   return {
     currentSentence,
+    targetText,
     charStates,
     cursorIndex,
     handleInputValue,

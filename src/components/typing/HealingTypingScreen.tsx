@@ -12,10 +12,11 @@ import { SENTENCE_SET_META } from "@/data/sentences";
 import { attemptAutoplay } from "@/hooks/useAudioControls";
 import { useBackgroundMedia } from "@/hooks/useBackgroundMedia";
 import { useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
+import { useSentenceTone } from "@/hooks/useSentenceTone";
 import { useSentenceTyping } from "@/hooks/useSentenceTyping";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { clampTypedValue } from "@/lib/typing-judge";
-import type { SentenceSetId } from "@/types/sentence";
+import type { SentenceSetId, SentenceTone } from "@/types/sentence";
 
 export default function HealingTypingScreen() {
   const { sfxVolume, setSfxVolume, isSfxMuted, toggleSfxMute, keySwitchType, setKeySwitchType, playTypingSound, playClickSound } =
@@ -35,8 +36,11 @@ export default function HealingTypingScreen() {
     fontStyle,
   } = useFontSettings();
 
+  const { tone, setTone } = useSentenceTone();
+
   const {
     currentSentence,
+    targetText,
     charStates,
     cursorIndex,
     handleInputValue,
@@ -45,7 +49,7 @@ export default function HealingTypingScreen() {
     activeSetId,
     setActiveSet,
     skipSentence,
-  } = useSentenceTyping(playTypingSound);
+  } = useSentenceTyping(tone, playTypingSound);
   const { videoStatus, audioStatus, videoRef, audioRef, videoSrc, audioSrc, nextVideo, nextAudio, previousAudio } =
     useBackgroundMedia();
   const hasAttemptedAutoplayRef = useRef(false);
@@ -61,12 +65,13 @@ export default function HealingTypingScreen() {
     typingInputRef.current?.focus();
   }, []);
 
-  // 문장이 바뀌면(자동 전환 포함) 입력창도 함께 비워 다음 문장을 처음부터 입력하게 한다.
+  // 문장이 바뀌거나(자동 전환 포함) 톤이 바뀌어 목표 텍스트 자체가 달라지면, 입력창도
+  // 함께 비워 처음부터 다시 입력하게 한다.
   useEffect(() => {
     if (typingInputRef.current) {
       typingInputRef.current.value = "";
     }
-  }, [currentSentence.id]);
+  }, [currentSentence.id, targetText]);
 
   const focusTypingInput = useCallback(() => {
     typingInputRef.current?.focus();
@@ -142,6 +147,14 @@ export default function HealingTypingScreen() {
     [playClickSound, setFontFamily]
   );
 
+  const handleSelectTone = useCallback(
+    (nextTone: SentenceTone) => {
+      playClickSound();
+      setTone(nextTone);
+    },
+    [playClickSound, setTone]
+  );
+
   // 같은 문장을 처음 상태로 되돌린다. 판정 상태(useSentenceTyping)뿐 아니라 실제 <input> DOM
   // 값도 비워야 하는데, 그 입력창이 uncontrolled라 여기서 직접 value를 지워준다.
   const handleRewrite = useCallback(() => {
@@ -168,14 +181,14 @@ export default function HealingTypingScreen() {
         return;
       }
       const raw = inputEl.value;
-      const clamped = clampTypedValue(raw, currentSentence.text);
+      const clamped = clampTypedValue(raw, targetText);
       if (clamped !== raw) {
         inputEl.value = clamped;
         inputEl.setSelectionRange(clamped.length, clamped.length);
       }
       handleInputValue(clamped);
     },
-    [handleInputValue, currentSentence.text]
+    [handleInputValue, targetText]
   );
 
   // 매 입력 이벤트마다(한글 조합 중간에도) 곧바로 판정을 돌린다 — 이미 완성된 앞 글자의
@@ -208,7 +221,7 @@ export default function HealingTypingScreen() {
       if (event.key === "Enter") {
         confirmIfComplete();
       } else if (event.key === " " || event.code === "Space") {
-        if (cursorIndex >= currentSentence.text.length) {
+        if (cursorIndex >= targetText.length) {
           event.preventDefault();
           confirmIfComplete();
         }
@@ -216,7 +229,7 @@ export default function HealingTypingScreen() {
         handleRewrite();
       }
     },
-    [confirmIfComplete, handleRewrite, cursorIndex, currentSentence.text.length]
+    [confirmIfComplete, handleRewrite, cursorIndex, targetText.length]
   );
 
   return (
@@ -230,7 +243,7 @@ export default function HealingTypingScreen() {
 
       <div className="relative z-20 flex min-h-screen flex-col items-center justify-center gap-10">
         <SentenceTypingArea
-          sentence={currentSentence.text}
+          sentence={targetText}
           charStates={charStates}
           inputRef={typingInputRef}
           fontStyle={fontStyle}
@@ -272,6 +285,9 @@ export default function HealingTypingScreen() {
         onResetFontWeight={handleResetFontWeight}
         fontFamily={fontFamily}
         onSelectFontFamily={handleSelectFontFamily}
+        tone={tone}
+        onSelectTone={handleSelectTone}
+        activeSetId={activeSetId}
       />
     </main>
   );

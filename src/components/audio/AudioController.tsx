@@ -19,6 +19,7 @@ import { getAudioTrackMeta } from "@/lib/media-paths";
 import { KEY_SWITCH_OPTIONS, type KeySwitchType } from "@/data/keySwitches";
 import type { FontFamilyId } from "@/hooks/useFontSettings";
 import type { MediaLoadStatus } from "@/types/media";
+import type { SentenceSetId, SentenceTone } from "@/types/sentence";
 
 interface AudioControllerProps {
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -43,6 +44,9 @@ interface AudioControllerProps {
   onResetFontWeight: () => void;
   fontFamily: FontFamilyId;
   onSelectFontFamily: (id: FontFamilyId) => void;
+  tone: SentenceTone;
+  onSelectTone: (tone: SentenceTone) => void;
+  activeSetId: SentenceSetId;
 }
 
 export default function AudioController({
@@ -68,6 +72,9 @@ export default function AudioController({
   onResetFontWeight,
   fontFamily,
   onSelectFontFamily,
+  tone,
+  onSelectTone,
+  activeSetId,
 }: AudioControllerProps) {
   const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
 
@@ -187,6 +194,9 @@ export default function AudioController({
         onResetFontWeight={onResetFontWeight}
         fontFamily={fontFamily}
         onSelectFontFamily={onSelectFontFamily}
+        tone={tone}
+        onSelectTone={onSelectTone}
+        activeSetId={activeSetId}
       />
     </div>
   );
