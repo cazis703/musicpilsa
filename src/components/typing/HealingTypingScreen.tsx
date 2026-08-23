@@ -6,6 +6,7 @@ import BackgroundVideoLayer from "@/components/background/BackgroundVideoLayer";
 import StarfieldBackground from "@/components/background/StarfieldBackground";
 import RewriteButton from "@/components/typing/RewriteButton";
 import SentenceTypingArea from "@/components/typing/SentenceTypingArea";
+import SiteTitleBar from "@/components/typing/SiteTitleBar";
 import SkipButton from "@/components/typing/SkipButton";
 import ThemeSwitcher from "@/components/typing/ThemeSwitcher";
 import { SENTENCE_SET_META } from "@/data/sentences";
@@ -14,6 +15,7 @@ import { useBackgroundMedia } from "@/hooks/useBackgroundMedia";
 import { useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
 import { useSentenceTone } from "@/hooks/useSentenceTone";
 import { useSentenceTyping } from "@/hooks/useSentenceTyping";
+import { useSiteTitle } from "@/hooks/useSiteTitle";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { clampTypedValue } from "@/lib/typing-judge";
 import type { SentenceSetId, SentenceTone } from "@/types/sentence";
@@ -37,6 +39,7 @@ export default function HealingTypingScreen() {
   } = useFontSettings();
 
   const { tone, setTone } = useSentenceTone();
+  const { recipientName, setRecipientName, isVisible: isTitleVisible, hideTitle, showTitle } = useSiteTitle();
 
   const {
     currentSentence,
@@ -76,6 +79,18 @@ export default function HealingTypingScreen() {
   const focusTypingInput = useCallback(() => {
     typingInputRef.current?.focus();
   }, []);
+
+  // 타이핑 입력창은 블러되면 즉시 자기 자신에게 포커스를 되돌려 사용자가 실수로
+  // 다른 곳(버튼 등)을 클릭해도 타이핑을 이어갈 수 있게 한다. 다만 사이트 제목
+  // 이름 입력창처럼 텍스트를 직접 타이핑해야 하는 다른 <input>/<textarea>로
+  // 포커스가 이동하는 중이라면 그 입력을 가로채면 안 되므로 재포커스를 건너뛴다.
+  const handleTypingInputBlur = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+    const nextTarget = event.relatedTarget as HTMLElement | null;
+    if (nextTarget && (nextTarget.tagName === "INPUT" || nextTarget.tagName === "TEXTAREA")) {
+      return;
+    }
+    focusTypingInput();
+  }, [focusTypingInput]);
 
   // ★ 클릭음 트리거 지점: 기존 핸들러를 그대로 감싸는 방식으로, 각 컴포넌트(AudioController,
   // SkipButton, ThemeSwitcher, RewriteButton) 자체는 수정하지 않고 HealingTypingScreen에서 조립만 담당한다.
@@ -232,6 +247,9 @@ export default function HealingTypingScreen() {
     [confirmIfComplete, handleRewrite, cursorIndex, targetText.length]
   );
 
+  const activeSetLabel =
+    SENTENCE_SET_META.find((set) => set.id === activeSetId)?.label ?? SENTENCE_SET_META[0].label;
+
   return (
     <main
       className="relative min-h-screen min-w-[1024px] overflow-hidden bg-slate-950"
@@ -240,6 +258,17 @@ export default function HealingTypingScreen() {
       <StarfieldBackground />
       <BackgroundVideoLayer videoRef={videoRef} videoStatus={videoStatus} videoSrc={videoSrc} />
       <div className="pointer-events-none fixed inset-0 z-[2] bg-black/50" />
+
+      <div onClick={(event) => event.stopPropagation()}>
+        <SiteTitleBar
+          recipientName={recipientName}
+          onRecipientNameChange={setRecipientName}
+          setLabel={activeSetLabel}
+          isVisible={isTitleVisible}
+          onHide={hideTitle}
+          onShow={showTitle}
+        />
+      </div>
 
       <div className="relative z-20 flex min-h-screen flex-col items-center justify-center gap-10">
         <SentenceTypingArea
@@ -250,7 +279,7 @@ export default function HealingTypingScreen() {
           onInput={handleInput}
           onCompositionEnd={handleCompositionEnd}
           onKeyDown={handleKeyDown}
-          onBlur={focusTypingInput}
+          onBlur={handleTypingInputBlur}
         />
 
         <div className="flex items-center gap-4">

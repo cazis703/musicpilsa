@@ -17,7 +17,7 @@ interface SentenceTypingAreaProps {
   onInput: (event: React.FormEvent<HTMLInputElement>) => void;
   onCompositionEnd: (event: React.CompositionEvent<HTMLInputElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  onBlur: () => void;
+  onBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
 }
 
 // 목표 문장 레이어와 입력창이 반드시 같은 폰트 크기/굵기/자간으로 렌더링되어야
