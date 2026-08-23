@@ -10,6 +10,12 @@ export const VIDEO_PATHS = [
   "/media/video/ocean-sun-summer-evening.mp4",
   "/media/video/tree-green-field-aerial.mp4",
   "/media/video/tree-trunk-forest-canopy.mp4",
+  "/media/video/astrophotography-stars-milky-way.mp4",
+  "/media/video/mountains-wilderness-arizona-sky.mp4",
+  "/media/video/arizona-sky-stars-galaxy.mp4",
+  "/media/video/stars-clouds-night-timelapse.mp4",
+  "/media/video/light-leaks-colorful-optical-flares.mp4",
+  "/media/video/motion-sky-clouds-atmosphere.mp4",
 ] as const;
 
 export const AUDIO_PATHS = [
