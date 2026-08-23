@@ -18,6 +18,9 @@ export const AUDIO_PATHS = [
   "/media/audio/our-home.mp3",
   "/media/audio/strangers-instrumental.mp3",
   "/media/audio/where-hope-begins.mp3",
+  "/media/audio/i-dreamed-you-up.mp3",
+  "/media/audio/little-after-all.mp3",
+  "/media/audio/departure.mp3",
 ] as const;
 
 export interface AudioTrackMeta {
@@ -39,6 +42,21 @@ export const AUDIO_TRACK_META: Record<(typeof AUDIO_PATHS)[number], AudioTrackMe
   "/media/audio/where-hope-begins.mp3": {
     title: "Where Hope Begins",
     artist: "Lumine Wave",
+    license: "License unconfirmed",
+  },
+  "/media/audio/i-dreamed-you-up.mp3": {
+    title: "I Dreamed You Up (Instrumental)",
+    artist: "Bixxby",
+    license: "License unconfirmed",
+  },
+  "/media/audio/little-after-all.mp3": {
+    title: "Little After All (Instrumental)",
+    artist: "Bradbury Lane",
+    license: "License unconfirmed",
+  },
+  "/media/audio/departure.mp3": {
+    title: "Departure",
+    artist: "Steven Beddall",
     license: "License unconfirmed",
   },
 };
