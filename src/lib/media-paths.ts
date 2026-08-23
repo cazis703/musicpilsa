@@ -5,6 +5,11 @@ export const VIDEO_PATHS = [
   "/media/video/rooftop-sunset.mp4",
   "/media/video/sea-foam-shore.mp4",
   "/media/video/waves-sea.mp4",
+  "/media/video/cityscape-sunset-golden-hour.mp4",
+  "/media/video/forest-green-rain-tranquil.mp4",
+  "/media/video/ocean-sun-summer-evening.mp4",
+  "/media/video/tree-green-field-aerial.mp4",
+  "/media/video/tree-trunk-forest-canopy.mp4",
 ] as const;
 
 export const AUDIO_PATHS = [
