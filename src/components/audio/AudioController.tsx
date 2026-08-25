@@ -1,14 +1,13 @@
 "use client";
 
-import { useAudioControls } from "@/hooks/useAudioControls";
 import NowPlaying from "@/components/audio/NowPlaying";
 import PlayPauseButton from "@/components/audio/PlayPauseButton";
 import SfxTypeDropdown from "@/components/audio/SfxTypeDropdown";
 import VolumeSlider from "@/components/audio/VolumeSlider";
-import FontSettingsPanel from "@/components/typing/FontSettingsPanel";
 import {
   NoteIcon,
   NoteMutedIcon,
+  SettingsIcon,
   SkipNextIcon,
   SkipPreviousIcon,
   SpeakerMutedIcon,
@@ -17,9 +16,7 @@ import {
 } from "@/components/ui/icons";
 import { getAudioTrackMeta } from "@/lib/media-paths";
 import { KEY_SWITCH_OPTIONS, type KeySwitchType } from "@/data/keySwitches";
-import type { FontFamilyId } from "@/hooks/useFontSettings";
 import type { MediaLoadStatus } from "@/types/media";
-import type { SentenceSetId, SentenceTone } from "@/types/sentence";
 
 interface AudioControllerProps {
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -28,25 +25,19 @@ interface AudioControllerProps {
   onNextVideo: () => void;
   onNextAudio: () => void;
   onPreviousAudio: () => void;
+  isMuted: boolean;
+  volume: number;
+  isPlaying: boolean;
+  toggleMute: () => void;
+  setVolume: (value: number) => void;
+  togglePlay: () => void;
   sfxVolume: number;
   onSfxVolumeChange: (value: number) => void;
   isSfxMuted: boolean;
   onToggleSfxMute: () => void;
   keySwitchType: KeySwitchType;
   onKeySwitchTypeChange: (type: KeySwitchType) => void;
-  fontSizeRem: number;
-  onIncreaseFontSize: () => void;
-  onDecreaseFontSize: () => void;
-  onResetFontSize: () => void;
-  fontWeight: number;
-  onIncreaseFontWeight: () => void;
-  onDecreaseFontWeight: () => void;
-  onResetFontWeight: () => void;
-  fontFamily: FontFamilyId;
-  onSelectFontFamily: (id: FontFamilyId) => void;
-  tone: SentenceTone;
-  onSelectTone: (tone: SentenceTone) => void;
-  activeSetId: SentenceSetId;
+  onOpenSettings: () => void;
 }
 
 export default function AudioController({
@@ -56,28 +47,20 @@ export default function AudioController({
   onNextVideo,
   onNextAudio,
   onPreviousAudio,
+  isMuted,
+  volume,
+  isPlaying,
+  toggleMute,
+  setVolume,
+  togglePlay,
   sfxVolume,
   onSfxVolumeChange,
   isSfxMuted,
   onToggleSfxMute,
   keySwitchType,
   onKeySwitchTypeChange,
-  fontSizeRem,
-  onIncreaseFontSize,
-  onDecreaseFontSize,
-  onResetFontSize,
-  fontWeight,
-  onIncreaseFontWeight,
-  onDecreaseFontWeight,
-  onResetFontWeight,
-  fontFamily,
-  onSelectFontFamily,
-  tone,
-  onSelectTone,
-  activeSetId,
+  onOpenSettings,
 }: AudioControllerProps) {
-  const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
-
   return (
     <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 rounded-full bg-black/40 px-5 py-2 backdrop-blur">
       <audio ref={audioRef} src={audioSrc} />
@@ -182,22 +165,15 @@ export default function AudioController({
 
       <span className="h-5 w-px shrink-0 bg-white/20" aria-hidden="true" />
 
-      {/* g. 글자 크기·굵기·글꼴 설정 */}
-      <FontSettingsPanel
-        fontSizeRem={fontSizeRem}
-        onIncreaseFontSize={onIncreaseFontSize}
-        onDecreaseFontSize={onDecreaseFontSize}
-        onResetFontSize={onResetFontSize}
-        fontWeight={fontWeight}
-        onIncreaseFontWeight={onIncreaseFontWeight}
-        onDecreaseFontWeight={onDecreaseFontWeight}
-        onResetFontWeight={onResetFontWeight}
-        fontFamily={fontFamily}
-        onSelectFontFamily={onSelectFontFamily}
-        tone={tone}
-        onSelectTone={onSelectTone}
-        activeSetId={activeSetId}
-      />
+      {/* g. 설정 열기 — 문장 Set/타이틀/배경/폰트·톤/배경음 등 전체 설정은 이 안에 모여있다 */}
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        aria-label="설정 열기"
+        className="text-white/70 transition-colors hover:text-white"
+      >
+        <SettingsIcon className="h-5 w-5" />
+      </button>
     </div>
   );
 }

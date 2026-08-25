@@ -20,7 +20,7 @@ const CLICK_SOUND_SRC = "/media/sfx/ui-click.wav";
 const TYPING_POOL_SIZE = 4;
 const CLICK_POOL_SIZE = 3;
 
-const DEFAULT_SFX_VOLUME = 0.5;
+export const DEFAULT_SFX_VOLUME = 0.5;
 export const SFX_VOLUME_STORAGE_KEY = "musicpilsa:sfxVolume";
 export const KEY_SWITCH_STORAGE_KEY = "musicpilsa:keySwitchType";
 

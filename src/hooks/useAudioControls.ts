@@ -19,7 +19,7 @@ export const attemptAutoplay = (audioEl: HTMLAudioElement | null) => {
 };
 
 export const BGM_VOLUME_STORAGE_KEY = "musicpilsa:bgmVolume";
-const DEFAULT_BGM_VOLUME = 0.5;
+export const DEFAULT_BGM_VOLUME = 0.5;
 
 export function useAudioControls(audioRef: React.RefObject<HTMLAudioElement>): UseAudioControlsReturn {
   const [isMuted, setIsMuted] = useState(false);

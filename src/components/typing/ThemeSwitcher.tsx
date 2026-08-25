@@ -18,7 +18,7 @@ const SET_ICONS: Partial<Record<SentenceSetId, (props: { className?: string }) =
   affirmation: MirrorIcon,
 };
 
-function getSetIcon(id: SentenceSetId) {
+export function getSetIcon(id: SentenceSetId) {
   return SET_ICONS[id] ?? NoteIcon;
 }
 

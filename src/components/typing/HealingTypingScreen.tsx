@@ -1,22 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AudioController from "@/components/audio/AudioController";
 import BackgroundVideoLayer from "@/components/background/BackgroundVideoLayer";
 import StarfieldBackground from "@/components/background/StarfieldBackground";
 import RewriteButton from "@/components/typing/RewriteButton";
 import SentenceTypingArea from "@/components/typing/SentenceTypingArea";
+import SettingsDrawer from "@/components/typing/SettingsDrawer";
 import SiteTitleBar from "@/components/typing/SiteTitleBar";
 import SkipButton from "@/components/typing/SkipButton";
 import ThemeSwitcher from "@/components/typing/ThemeSwitcher";
 import { SENTENCE_SET_META } from "@/data/sentences";
-import { attemptAutoplay } from "@/hooks/useAudioControls";
+import { DEFAULT_KEY_SWITCH } from "@/data/keySwitches";
+import { attemptAutoplay, DEFAULT_BGM_VOLUME, useAudioControls } from "@/hooks/useAudioControls";
 import { useBackgroundMedia } from "@/hooks/useBackgroundMedia";
-import { useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
-import { useSentenceTone } from "@/hooks/useSentenceTone";
+import { DEFAULT_FONT_FAMILY, useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
+import { DEFAULT_SENTENCE_TONE, useSentenceTone } from "@/hooks/useSentenceTone";
 import { useSentenceTyping } from "@/hooks/useSentenceTyping";
 import { useSiteTitle } from "@/hooks/useSiteTitle";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { DEFAULT_SFX_VOLUME, useSoundEffects } from "@/hooks/useSoundEffects";
 import { clampTypedValue } from "@/lib/typing-judge";
 import type { SentenceSetId, SentenceTone } from "@/types/sentence";
 
@@ -55,6 +57,8 @@ export default function HealingTypingScreen() {
   } = useSentenceTyping(tone, playTypingSound);
   const { videoStatus, audioStatus, videoRef, audioRef, videoSrc, audioSrc, nextVideo, nextAudio, previousAudio } =
     useBackgroundMedia();
+  const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const hasAttemptedAutoplayRef = useRef(false);
   const typingInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,6 +173,47 @@ export default function HealingTypingScreen() {
     },
     [playClickSound, setTone]
   );
+
+  const handleOpenSettings = useCallback(() => {
+    playClickSound();
+    setIsSettingsOpen(true);
+  }, [playClickSound]);
+
+  const handleCloseSettings = useCallback(() => {
+    setIsSettingsOpen(false);
+  }, []);
+
+  // 문장 Set 자체(지금 읽고 있는 콘텐츠)는 건드리지 않고, 조절 가능한 "설정값"만 기본값으로
+  // 되돌린다 — 톤/타이틀/볼륨·타건음/폰트.
+  const handleResetAllSettings = useCallback(() => {
+    playClickSound();
+    setTone(DEFAULT_SENTENCE_TONE);
+    setRecipientName("");
+    showTitle();
+    setVolume(DEFAULT_BGM_VOLUME);
+    if (isMuted) toggleMute();
+    setSfxVolume(DEFAULT_SFX_VOLUME);
+    if (isSfxMuted) toggleSfxMute();
+    setKeySwitchType(DEFAULT_KEY_SWITCH);
+    resetFontSize();
+    resetFontWeight();
+    setFontFamily(DEFAULT_FONT_FAMILY);
+  }, [
+    playClickSound,
+    setTone,
+    setRecipientName,
+    showTitle,
+    setVolume,
+    isMuted,
+    toggleMute,
+    setSfxVolume,
+    isSfxMuted,
+    toggleSfxMute,
+    setKeySwitchType,
+    resetFontSize,
+    resetFontWeight,
+    setFontFamily,
+  ]);
 
   // 같은 문장을 처음 상태로 되돌린다. 판정 상태(useSentenceTyping)뿐 아니라 실제 <input> DOM
   // 값도 비워야 하는데, 그 입력창이 uncontrolled라 여기서 직접 value를 지워준다.
@@ -298,9 +343,47 @@ export default function HealingTypingScreen() {
         onNextVideo={handleNextVideo}
         onNextAudio={handleNextAudio}
         onPreviousAudio={handlePreviousAudio}
+        isMuted={isMuted}
+        volume={volume}
+        isPlaying={isPlaying}
+        toggleMute={toggleMute}
+        setVolume={setVolume}
+        togglePlay={togglePlay}
         sfxVolume={sfxVolume}
         onSfxVolumeChange={setSfxVolume}
         isSfxMuted={isSfxMuted}
+        onToggleSfxMute={toggleSfxMute}
+        keySwitchType={keySwitchType}
+        onKeySwitchTypeChange={setKeySwitchType}
+        onOpenSettings={handleOpenSettings}
+      />
+
+      {/* SettingsDrawer 안에는 이름 입력창이 있어서 SiteTitleBar와 마찬가지로 클릭이
+          main까지 전파되면 안 된다 — 그러지 않으면 클릭할 때마다 main의 onClick이
+          타이핑 입력창으로 포커스를 다시 빼앗아가 버려서 안의 입력창에 타이핑이 안 된다. */}
+      <div onClick={(event) => event.stopPropagation()}>
+      <SettingsDrawer
+        isOpen={isSettingsOpen}
+        onClose={handleCloseSettings}
+        onResetAll={handleResetAllSettings}
+        sets={SENTENCE_SET_META}
+        activeSetId={activeSetId}
+        onSelectSet={handleSelectSet}
+        tone={tone}
+        onSelectTone={handleSelectTone}
+        recipientName={recipientName}
+        onRecipientNameChange={setRecipientName}
+        isTitleVisible={isTitleVisible}
+        onHideTitle={hideTitle}
+        onShowTitle={showTitle}
+        onNextVideo={handleNextVideo}
+        musicVolume={volume}
+        isMusicMuted={isMuted}
+        onMusicVolumeChange={setVolume}
+        onToggleMusicMute={toggleMute}
+        sfxVolume={sfxVolume}
+        isSfxMuted={isSfxMuted}
+        onSfxVolumeChange={setSfxVolume}
         onToggleSfxMute={toggleSfxMute}
         keySwitchType={keySwitchType}
         onKeySwitchTypeChange={setKeySwitchType}
@@ -314,10 +397,8 @@ export default function HealingTypingScreen() {
         onResetFontWeight={handleResetFontWeight}
         fontFamily={fontFamily}
         onSelectFontFamily={handleSelectFontFamily}
-        tone={tone}
-        onSelectTone={handleSelectTone}
-        activeSetId={activeSetId}
       />
+      </div>
     </main>
   );
 }
