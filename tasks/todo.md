@@ -16,24 +16,23 @@
 - [x] `src/components/typing/ThemeSwitcher.tsx` — `getSetIcon` export로 변경 (SettingsDrawer에서 재사용).
 - [x] `src/components/typing/HealingTypingScreen.tsx` — SettingsDrawer 열림 상태 추가, 렌더링에 조립.
 - [x] `npm run typecheck` 통과, `npm run dev` 컴파일/200 응답 확인 완료.
-- [ ] **사용자 브라우저 확인 필요**: ⚙ 클릭 → 드로어 슬라이드, 각 섹션 값 변경이 실제로 반영되는지(볼륨/타건음/폰트/문장Set/타이틀), 화면이 안 가려지는지, 바깥 컨트롤(문장Set 드롭다운/타이틀 표시)과 값이 계속 맞게 동작하는지.
+- [x] **사용자 브라우저 확인 완료** — 커밋됨(`5b6d999`).
 
-### 2단계 — 배경음 오브 신규 기능
+### 2단계 — 배경음 오브 신규 기능 — ✅ 코드 작성 완료, 사용자 브라우저 확인 대기
 
-- [ ] 사운드 파일 정리: `public/media/` 에 있는 9개 파일(한글+긴 크레딧명)을 `public/media/ambient/`로 이동, 영문 케밥케이스로 정리. `검색어.txt`는 삭제 또는 `tasks/`로 이동 (사용자 확인).
-  - 빗소리는 `gentle-rain` 파일만 사용, 천둥/캐럴 섞인 파일은 미사용.
-- [ ] `src/types/ambientSound.ts` (신규) — id/label/icon/accent/filePath/기본 x·y%/기본 볼륨/재생구간(start~end초)/playbackRate.
-- [ ] `src/data/ambientSounds.ts` (신규) — 9개 사운드 정의.
-  - 연필: 0~5초 구간, 1.5배 느리게(playbackRate 0.667)
-  - 책장 넘김: 0~10초 구간, 2배 느리게(playbackRate 0.5)
-  - 풀벌레: **0~45초 구간** ⚠️ 원본 파일명 메모("45초부터 잘라야됨")와 반대 방향이라 실제 파일 들어보고 재확인 필요
-- [ ] `src/components/ui/icons.tsx` — 파도/빗방울/불꽃/풀잎/싱잉볼/풍경/거품/연필/책장 아이콘 추가.
-- [ ] `src/hooks/useAmbientSounds.ts` (신규) — 켜진 사운드 목록(추가/삭제), 각 위치(x·y%)·볼륨 상태, localStorage 영속화, `<audio loop>` 엘리먼트 재생/정지/볼륨/구간반복/playbackRate 제어.
-- [ ] `src/components/audio/AmbientOrbLayer.tsx` + `AmbientOrb.tsx` (신규) — 목업의 드래그(위치)/halo 드래그(볼륨)/hover 어포던스/× 삭제 인터랙션을 React로 포팅.
-- [ ] `SettingsDrawer.tsx`의 "배경음 추가·삭제" 섹션 채우기 — 목업의 on/off 스위치 리스트 로직 연결.
-- [ ] `HealingTypingScreen.tsx`에 `<AmbientOrbLayer/>` 배치.
-- [ ] 검증: typecheck, 브라우저에서 오브 추가/삭제/드래그/볼륨/새로고침 후 유지 여부 확인 (사용자 확인 필요 — 오디오 재생은 제가 들을 수 없음).
+- [x] 사운드 파일 정리: `public/media/`의 9개 파일을 `public/media/ambient/`로 이동, 영문 케밥케이스로 rename(`ocean-waves.wav`, `gentle-rain.wav`, `campfire-crackle.flac`, `crickets-night.wav`, `singing-bowl.wav`, `wind-chimes.wav`, `boiling-water.wav`, `pencil-writing.wav`, `page-flipping.wav`). 미사용 천둥소리 rain 파일과 `검색어.txt`는 `public/media/`에 그대로 둠(사용자 확인).
+  - 풀벌레(cricket) 재생 구간은 사용자가 실제로 들어보고 **0~45초**로 확정(파일명 메모 "45초부터 잘라야됨"과는 반대 방향이었음 — 확인 완료).
+- [x] `src/types/ambientSound.ts` (신규) — `AmbientSoundId`/`AmbientSoundMeta`(icon/accent/src/기본 x·y%/기본 볼륨/재생구간/playbackRate)/`AmbientSoundPositions`.
+- [x] `src/data/ambientSounds.ts` (신규) — 9개 사운드 정의. 연필 0~5초(playbackRate 1/1.5), 책장 0~10초(playbackRate 0.5), 풀벌레 0~45초(playbackRate 1).
+- [x] `src/components/ui/icons.tsx` — `WaveIcon`/`RainDropIcon`/`FlameIcon`/`CricketIcon`/`SingingBowlIcon`/`WindChimesIcon`/`BubblesIcon`/`PageFlipIcon` 추가(연필은 기존 `PencilIcon` 재사용).
+- [x] `src/hooks/useAmbientSounds.ts` (신규) — 켜진 사운드(x·y%·볼륨) 상태 + localStorage 영속화(`musicpilsa:ambientSounds`) + `<audio>` 엘리먼트 생성/정리, 재생구간 있는 사운드는 timeupdate/ended로 구간 반복, `resumeAll()`로 자동재생 차단 시 첫 인터랙션에 재시도.
+- [x] `src/components/audio/AmbientOrb.tsx` + `AmbientOrbLayer.tsx` (신규) — 안쪽 원 드래그(위치)/바깥 원 가장자리 드래그(볼륨)/hover 시 밝아지는 어포던스/hover 시 × 삭제 버튼, 목업 그대로 포팅.
+- [x] `tailwind.config.ts` — `orb-bob`(떠다니는 애니메이션)/`orb-enter`(등장 애니메이션) keyframes 추가.
+- [x] `SettingsDrawer.tsx`의 "배경음" 섹션 — 9개 사운드 on/off 스위치 리스트로 채움(아이콘 칩 + 이름 + 토글 스위치, accent 컬러 반영).
+- [x] `HealingTypingScreen.tsx`에 `useAmbientSounds` 훅 연결 + `<AmbientOrbLayer/>` 배치 + Settings 배경음 토글에 클릭음 연결.
+- [x] `npm run typecheck` 통과, `npm run dev`(별도 포트)로 컴파일 200 확인 + `public/media/ambient/`의 9개 파일 모두 200으로 서빙 확인.
+- [ ] **사용자 브라우저 확인 필요**: Settings에서 배경음 켜기/끄기 → 화면에 오브가 뜨는지, 안쪽 원 드래그로 위치 이동, 바깥 원 가장자리 드래그로 볼륨 조절(소리 크기 변화 포함 — 오디오는 제가 들을 수 없음), hover 시 × 버튼으로 삭제, 새로고침 후 켜둔 상태/위치/볼륨이 유지되는지, 풀벌레/연필/책장 넘김이 짧은 구간만 반복되는지.
 
 ## 진행 방식
-- 1단계 코드 변경 후 → 브라우저 확인 요청 → OK 받으면 커밋 여부 확인 → 2단계 시작.
-- 큰 작업이라 한 파일씩 보여드리면서 진행합니다.
+- 1단계 완료·커밋됨. 2단계 코드 작성 완료, 브라우저 확인 대기 중.
+- 확인 후 이상 없으면 커밋 여부를 여쭤보고 진행합니다.
