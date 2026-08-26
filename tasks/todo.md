@@ -1,52 +1,21 @@
 # 오늘 할 일
 
-## 진행 중 — 배경 영상 끊김(압축 외) 개선
+## 진행 중 — 첫 화면 로딩 연출 + 타이핑 전 소리 재생 버그 수정 (코드 작성·1차 검증 완료, 사용자 브라우저 확인 대기)
 
-배경 영상이 뚝뚝 끊기는 문제. 원인은 파일 용량이 아니라 "매 프레임마다 GPU/메인스레드에 반복 계산을 시키는 구조"로 진단. 영향 큰 순서대로 3단계 진행, 각 단계마다 브라우저로 확인 후 다음 단계로.
+- [x] 로딩 화면(`LoadingScreen.tsx`) 추가 — 심플 프로그레스 바, 배경 영상 준비되면 페이드아웃.
+- [x] 타이틀바 → 문장입력창 → 버튼줄 → 하단 컨트롤바 순으로 아래에서 위로 뜨며 페이드인(`fade-up-in`/`fade-up-in-x`).
+- [x] 버그 수정 — 타이핑 시작 전엔 배경음악/배경음이 전혀 재생 안 되던 문제. 클릭/키 입력 등 페이지 전체의 첫 제스처에서 재생 재시도하도록 수정.
+- [x] `npm run typecheck` 통과, Playwright로 로딩화면 등장/소멸·하단바 중앙정렬 유지·클릭만/타이핑만 각각 오디오 재생 확인.
+- [ ] **사용자 브라우저 확인 필요**: 실제로 보기에 로딩 연출 느낌이 괜찮은지(속도/타이밍), 소리가 원하는 타이밍에 잘 들리는지.
+- [ ] 확인 후 이상 없으면 커밋.
 
-- [x] 1단계 — `AudioController.tsx` 하단 바의 `backdrop-blur` 제거(반투명 배경색만 남김, `bg-black/30`으로 사용자 확인 후 조정 완료). **사용자 확인: 조금 나아졌으나 끊김 여전함.**
-- [x] 3단계(순서 앞당김) — 캔버스 애니메이션 3개(별빛/타이핑 파티클)가 배경 영상과 계속 자원을 나눠 쓰던 문제 개선:
-  - `useParticleSystem.ts` — 타이핑 파티클 캔버스가 파티클이 하나도 없을 때도 매초 60번씩 화면 전체를 지우고 다시 그리던 루프를 항상 켜두던 것을, **활성 파티클이 없으면 루프 자체를 멈추고 `spawnAt` 호출 시에만 다시 깨우도록 수정**. 상시로 돌던 낭비 제거 — 가장 유력한 원인으로 추정.
-  - `StarfieldBackground.tsx` — 별 개수 90 → 45로 축소.
-  - [x] **사용자 브라우저 확인 완료** — "훨씬 나아졌다"고 확인. 커밋 필요.
-- [ ] 2단계(보류) — 영상 loop+크로스페이드는 사용자가 "더 어색해질 것 같다"고 우려해 **일단 보류**. 3단계 확인 후 여전히 끊기면 크로스페이드 없이 `loop` 속성만 살짝 추가하는 가벼운 버전부터 다시 논의.
-- [ ] (필요시) 영상 밝기/채도 CSS `filter`를 실시간 계산 대신 다른 방식으로 대체 검토.
+## 완료 (지난 회차, 배포됨)
 
-각 단계 완료 후 `npm run dev`로 브라우저에서 실제로 끊김이 줄었는지 확인받고 다음 단계 진행.
+- 배경 영상 끊김 개선, 배경음 오브 볼륨 조절 UX 개선 — 상세 `tasks/progress.md` 2026-08-26 항목 참고.
+- 배경음 오브(사운드 오브) 9종 + Settings 드로어 — 배포 완료.
+- 미디어 자산 대대적 압축(565MB→194MB) — 배포 완료.
 
-## ✅ 완료 — Glow Orbs(사운드 오브) + Settings 드로어 목업 확정
-- `tasks/mockups/sound-orbs-glow-mockup.html` / Artifact로 확정 완료. 상세 내용은 `tasks/progress.md` 참고.
+## 보류 중인 미확정 항목 (사용자 결정: 지금은 건드리지 않음)
 
-## 다음 단계 — 실제 앱(`src/`)에 적용 (승인 후 실행 예정, 아직 코드 변경 없음)
-
-큰 작업이라 2단계로 나눠서 진행합니다. **1단계를 끝내고 브라우저로 확인받은 뒤 2단계로 넘어갑니다.**
-
-### 1단계 — 기존 UI 재배치 (신규 오디오 자산 없이, 구조만 정리) — ✅ 코드 작성 완료, 사용자 브라우저 확인 대기
-
-- [x] `src/components/typing/SettingsDrawer.tsx` (신규) — 우측 슬라이드 패널. 7개 섹션(문장Set+톤/사이트타이틀/배경/음악볼륨/타이핑음/폰트/배경음-placeholder) 작성 완료.
-- [x] `src/components/audio/AudioController.tsx` 수정 — `FontSettingsPanel` 제거, 맨 끝에 ⚙ 설정 버튼 추가. `useAudioControls` 훅은 `HealingTypingScreen`으로 끌어올림(SettingsDrawer와 값 공유 위해). 배경바꾸기/음악재생/타이핑음은 그대로 유지.
-- [x] `src/components/typing/FontSettingsPanel.tsx` 삭제 (내용은 SettingsDrawer 안에 인라인으로 재작성, 톤 부분은 문장 Set 섹션으로 이동).
-- [x] `src/components/ui/icons.tsx` — `SettingsIcon` 추가 (`CloseIcon`은 이미 있었음).
-- [x] `src/components/typing/ThemeSwitcher.tsx` — `getSetIcon` export로 변경 (SettingsDrawer에서 재사용).
-- [x] `src/components/typing/HealingTypingScreen.tsx` — SettingsDrawer 열림 상태 추가, 렌더링에 조립.
-- [x] `npm run typecheck` 통과, `npm run dev` 컴파일/200 응답 확인 완료.
-- [x] **사용자 브라우저 확인 완료** — 커밋됨(`5b6d999`).
-
-### 2단계 — 배경음 오브 신규 기능 — ✅ 코드 작성 완료, 사용자 브라우저 확인 대기
-
-- [x] 사운드 파일 정리: `public/media/`의 9개 파일을 `public/media/ambient/`로 이동, 영문 케밥케이스로 rename(`ocean-waves.wav`, `gentle-rain.wav`, `campfire-crackle.flac`, `crickets-night.wav`, `singing-bowl.wav`, `wind-chimes.wav`, `boiling-water.wav`, `pencil-writing.wav`, `page-flipping.wav`). 미사용 천둥소리 rain 파일과 `검색어.txt`는 `public/media/`에 그대로 둠(사용자 확인).
-  - 풀벌레(cricket) 재생 구간은 사용자가 실제로 들어보고 **0~45초**로 확정(파일명 메모 "45초부터 잘라야됨"과는 반대 방향이었음 — 확인 완료).
-- [x] `src/types/ambientSound.ts` (신규) — `AmbientSoundId`/`AmbientSoundMeta`(icon/accent/src/기본 x·y%/기본 볼륨/재생구간/playbackRate)/`AmbientSoundPositions`.
-- [x] `src/data/ambientSounds.ts` (신규) — 9개 사운드 정의. 연필 0~5초(playbackRate 1/1.5), 책장 0~10초(playbackRate 0.5), 풀벌레 0~45초(playbackRate 1).
-- [x] `src/components/ui/icons.tsx` — `WaveIcon`/`RainDropIcon`/`FlameIcon`/`CricketIcon`/`SingingBowlIcon`/`WindChimesIcon`/`BubblesIcon`/`PageFlipIcon` 추가(연필은 기존 `PencilIcon` 재사용).
-- [x] `src/hooks/useAmbientSounds.ts` (신규) — 켜진 사운드(x·y%·볼륨) 상태 + localStorage 영속화(`musicpilsa:ambientSounds`) + `<audio>` 엘리먼트 생성/정리, 재생구간 있는 사운드는 timeupdate/ended로 구간 반복, `resumeAll()`로 자동재생 차단 시 첫 인터랙션에 재시도.
-- [x] `src/components/audio/AmbientOrb.tsx` + `AmbientOrbLayer.tsx` (신규) — 안쪽 원 드래그(위치)/바깥 원 가장자리 드래그(볼륨)/hover 시 밝아지는 어포던스/hover 시 × 삭제 버튼, 목업 그대로 포팅.
-- [x] `tailwind.config.ts` — `orb-bob`(떠다니는 애니메이션)/`orb-enter`(등장 애니메이션) keyframes 추가.
-- [x] `SettingsDrawer.tsx`의 "배경음" 섹션 — 9개 사운드 on/off 스위치 리스트로 채움(아이콘 칩 + 이름 + 토글 스위치, accent 컬러 반영).
-- [x] `HealingTypingScreen.tsx`에 `useAmbientSounds` 훅 연결 + `<AmbientOrbLayer/>` 배치 + Settings 배경음 토글에 클릭음 연결.
-- [x] `npm run typecheck` 통과, `npm run dev`(별도 포트)로 컴파일 200 확인 + `public/media/ambient/`의 9개 파일 모두 200으로 서빙 확인.
-- [ ] **사용자 브라우저 확인 필요**: Settings에서 배경음 켜기/끄기 → 화면에 오브가 뜨는지, 안쪽 원 드래그로 위치 이동, 바깥 원 가장자리 드래그로 볼륨 조절(소리 크기 변화 포함 — 오디오는 제가 들을 수 없음), hover 시 × 버튼으로 삭제, 새로고침 후 켜둔 상태/위치/볼륨이 유지되는지, 풀벌레/연필/책장 넘김이 짧은 구간만 반복되는지.
-
-## 진행 방식
-- 1단계 완료·커밋됨. 2단계 코드 작성 완료, 브라우저 확인 대기 중.
-- 확인 후 이상 없으면 커밋 여부를 여쭤보고 진행합니다.
+- `public/media/(사용안함) 빗소리...wav`(50MB, 코드 미참조) 삭제 여부 → 그대로 둔다.
+- `public/media/검색어.txt` 삭제 여부 → 그대로 둔다.

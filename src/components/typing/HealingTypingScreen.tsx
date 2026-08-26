@@ -5,6 +5,7 @@ import AmbientOrbLayer from "@/components/audio/AmbientOrbLayer";
 import AudioController from "@/components/audio/AudioController";
 import BackgroundVideoLayer from "@/components/background/BackgroundVideoLayer";
 import StarfieldBackground from "@/components/background/StarfieldBackground";
+import LoadingScreen from "@/components/loading/LoadingScreen";
 import RewriteButton from "@/components/typing/RewriteButton";
 import SentenceTypingArea from "@/components/typing/SentenceTypingArea";
 import SettingsDrawer from "@/components/typing/SettingsDrawer";
@@ -78,6 +79,33 @@ export default function HealingTypingScreen() {
     attemptAutoplay(audioRef.current);
     resumeAmbientSounds();
   }, [audioRef, resumeAmbientSounds]);
+
+  // 이전엔 이 재시도가 타이핑 입력창의 onInput(=실제로 한 글자를 쳐야만)에만 연결돼 있어서,
+  // 문장을 치기 전까지는 배경음악도 배경음(오브)도 전혀 재생되지 않는 버그가 있었다.
+  // 브라우저 자동재생 정책상 "진짜 사용자 제스처" 없이는 소리를 낼 수 없지만, 그 제스처가
+  // 꼭 타이핑일 필요는 없다 — 화면 아무 곳이나 클릭하거나 키를 한 번만 눌러도 충분하므로
+  // window에 캡처 단계로 붙여 페이지 전체에서 가장 먼저 일어나는 제스처를 잡는다.
+  useEffect(() => {
+    window.addEventListener("pointerdown", handleFirstInteraction, { capture: true });
+    window.addEventListener("keydown", handleFirstInteraction, { capture: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleFirstInteraction, { capture: true });
+      window.removeEventListener("keydown", handleFirstInteraction, { capture: true });
+    };
+  }, [handleFirstInteraction]);
+
+  // 배경 영상이 준비되면(성공/실패 무관, 기존 3초 타임아웃 로직 그대로 재사용) 로딩 화면을
+  // 내린다. 다만 로딩이 너무 빨리 끝나면 프로그레스 바가 깜빡이듯 스치기만 하고 사라져
+  // 오히려 어색하므로, 최소 노출 시간을 둬서 그보다 빨리 끝나도 그만큼은 채워서 보여준다.
+  const MIN_LOADING_MS = 550;
+  const [isAppReady, setIsAppReady] = useState(false);
+  const loadStartRef = useRef<number>(Date.now());
+  useEffect(() => {
+    if (videoStatus === "loading") return;
+    const elapsed = Date.now() - loadStartRef.current;
+    const timer = setTimeout(() => setIsAppReady(true), Math.max(0, MIN_LOADING_MS - elapsed));
+    return () => clearTimeout(timer);
+  }, [videoStatus]);
 
   useEffect(() => {
     typingInputRef.current?.focus();
@@ -323,7 +351,12 @@ export default function HealingTypingScreen() {
       <BackgroundVideoLayer videoRef={videoRef} videoStatus={videoStatus} videoSrc={videoSrc} />
       <div className="pointer-events-none fixed inset-0 z-[2] bg-black/50" />
 
-      <div onClick={(event) => event.stopPropagation()}>
+      <LoadingScreen isReady={isAppReady} />
+
+      <div
+        onClick={(event) => event.stopPropagation()}
+        className={isAppReady ? "animate-fade-up-in" : "opacity-0"}
+      >
         <SiteTitleBar
           recipientName={recipientName}
           onRecipientNameChange={setRecipientName}
@@ -336,18 +369,26 @@ export default function HealingTypingScreen() {
       </div>
 
       <div className="relative z-20 flex min-h-screen flex-col items-center justify-center gap-10">
-        <SentenceTypingArea
-          sentence={targetText}
-          charStates={charStates}
-          inputRef={typingInputRef}
-          fontStyle={fontStyle}
-          onInput={handleInput}
-          onCompositionEnd={handleCompositionEnd}
-          onKeyDown={handleKeyDown}
-          onBlur={handleTypingInputBlur}
-        />
+        <div
+          className={isAppReady ? "animate-fade-up-in" : "opacity-0"}
+          style={isAppReady ? { animationDelay: "90ms" } : undefined}
+        >
+          <SentenceTypingArea
+            sentence={targetText}
+            charStates={charStates}
+            inputRef={typingInputRef}
+            fontStyle={fontStyle}
+            onInput={handleInput}
+            onCompositionEnd={handleCompositionEnd}
+            onKeyDown={handleKeyDown}
+            onBlur={handleTypingInputBlur}
+          />
+        </div>
 
-        <div className="flex items-center gap-4">
+        <div
+          className={`flex items-center gap-4 ${isAppReady ? "animate-fade-up-in" : "opacity-0"}`}
+          style={isAppReady ? { animationDelay: "160ms" } : undefined}
+        >
           <ThemeSwitcher sets={SENTENCE_SET_META} activeSetId={activeSetId} onSelect={handleSelectSet} />
           <span className="h-3.5 w-px bg-white/20" aria-hidden="true" />
           <RewriteButton onRewrite={handleRewrite} />
@@ -383,6 +424,8 @@ export default function HealingTypingScreen() {
         keySwitchType={keySwitchType}
         onKeySwitchTypeChange={setKeySwitchType}
         onOpenSettings={handleOpenSettings}
+        isRevealed={isAppReady}
+        revealDelayMs={220}
       />
 
       {/* SettingsDrawer 안에는 이름 입력창이 있어서 SiteTitleBar와 마찬가지로 클릭이

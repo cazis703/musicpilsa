@@ -40,6 +40,18 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.4)" },
           "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
         },
+        "fade-up-in": {
+          "0%": { opacity: "0", transform: "translateY(14px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        // AudioController의 고정 하단 바처럼 이미 -translate-x-1/2로 가로 중앙정렬된
+        // 요소에 쓴다. orb-enter와 같은 이유로, 애니메이션이 transform 전체를 덮어쓰므로
+        // 기존 중앙정렬 값(-50%)을 keyframe 안에 반드시 함께 넣어야 애니메이션 종료 후에도
+        // 가운데 정렬이 풀리지 않는다.
+        "fade-up-in-x": {
+          "0%": { opacity: "0", transform: "translate(-50%, 14px)" },
+          "100%": { opacity: "1", transform: "translate(-50%, 0)" },
+        },
       },
       animation: {
         "glow-in": "glow-in 300ms ease-out",
@@ -47,6 +59,8 @@ const config: Config = {
         marquee: "marquee 12s linear infinite",
         "orb-bob": "orb-bob 7s ease-in-out infinite",
         "orb-enter": "orb-enter 0.5s cubic-bezier(0.2,0.8,0.2,1) both",
+        "fade-up-in": "fade-up-in 0.6s cubic-bezier(0.16,1,0.3,1) both",
+        "fade-up-in-x": "fade-up-in-x 0.6s cubic-bezier(0.16,1,0.3,1) both",
       },
     },
   },
