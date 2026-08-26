@@ -62,7 +62,7 @@ export default function AudioController({
   onOpenSettings,
 }: AudioControllerProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 rounded-full bg-black/40 px-5 py-2 backdrop-blur">
+    <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 rounded-full bg-black/30 px-5 py-2">
       <audio ref={audioRef} src={audioSrc} />
 
       {/* a. 배경 바꾸기 */}

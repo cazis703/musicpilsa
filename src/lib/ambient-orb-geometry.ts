@@ -2,7 +2,7 @@
 // vmin 기반이면 브라우저 창 크기가 바뀌어도 CSS만으로 오브가 자동으로 따라 커지고 작아지며,
 // 포인터 클릭 판정(hit-test)도 이벤트가 일어난 그 순간의 창 크기로 다시 환산해서 시각적
 // 크기와 항상 일치시킬 수 있다(고정 px였다면 창 크기가 바뀔 때 시각적 크기와 어긋난다).
-export const HALO_MIN_VMIN = 6; // 거의 무음일 때 바깥 원 반지름
+export const HALO_MIN_VMIN = 3.2; // 거의 무음일 때 바깥 원 반지름
 export const HALO_MAX_VMIN = 15; // 최대 볼륨일 때 바깥 원 반지름
 export const HALO_TOLERANCE_VMIN = 2.2; // 바깥 원 가장자리로 인식할 오차 범위
 export const ORB_SIZE_VMIN = 7; // 오브 본체(드래그 손잡이) 지름
@@ -39,6 +39,18 @@ export function volumeFromRadiusVmin(radiusVmin: number): number {
 
 export function radiusVminFromVolume(volume: number): number {
   return HALO_MIN_VMIN + Math.min(1, Math.max(0, volume)) * (HALO_MAX_VMIN - HALO_MIN_VMIN);
+}
+
+// 바깥 원(halo) 가장자리 위, 중심 기준 (dx, dy) 지점에 커서를 올렸을 때 보여줄 리사이즈
+// 커서. 그 지점에서 원 반지름을 늘리거나 줄이는 드래그 방향(=중심에서 그 지점을 잇는
+// 반지름 방향)과 시각적으로 일치하는 커서를 8방향(45도 간격)으로 골라 보여준다 —
+// 오른쪽/왼쪽은 수평 화살표, 위/아래는 수직 화살표, 대각선 네 곳은 대각선 화살표.
+export function resizeCursorFromAngle(dx: number, dy: number): "ew-resize" | "ns-resize" | "nwse-resize" | "nesw-resize" {
+  const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const normalized = ((angleDeg % 360) + 360) % 360;
+  const sector = Math.round(normalized / 45) % 8;
+  const cursors = ["ew-resize", "nwse-resize", "ns-resize", "nesw-resize", "ew-resize", "nwse-resize", "ns-resize", "nesw-resize"] as const;
+  return cursors[sector];
 }
 
 // 오브 위치(x/y %)를 지금 창 크기 기준으로 화면 안에 가둔다. 여백 기준은 볼륨을 나타내는

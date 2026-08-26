@@ -12,7 +12,7 @@ interface Star {
   twinklePhase: number;
 }
 
-const STAR_COUNT = 90;
+const STAR_COUNT = 45;
 
 function createStars(width: number, height: number): Star[] {
   return Array.from({ length: STAR_COUNT }, () => ({

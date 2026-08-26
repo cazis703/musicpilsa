@@ -11,6 +11,7 @@ import {
   ORB_SIZE_VMIN,
   pxToVmin,
   radiusVminFromVolume,
+  resizeCursorFromAngle,
   volumeFromRadiusVmin,
 } from "@/lib/ambient-orb-geometry";
 import type { AmbientSoundId, AmbientSoundMeta } from "@/types/ambientSound";
@@ -22,8 +23,10 @@ const WRAP_SIZE_CSS = "clamp(200px, 36vmin, 280px)";
 // clampAmbientPosition(ambient-orb-geometry.ts)의 "화면 밖으로 못 나가는 여백" 계산과
 // 반드시 같은 px 상하한을 써야 실제 렌더 크기와 드래그 한계가 어긋나지 않는다.
 const ORB_SIZE_CSS = `clamp(${ORB_SIZE_FLOOR_PX}px, ${ORB_SIZE_VMIN}vmin, ${ORB_SIZE_CEILING_PX}px)`;
-// 바깥 원(halo) 지름의 px 상하한 — HALO_MIN_VMIN(2)/HALO_MAX_VMIN(2)의 대략적인 px 환산값.
-const HALO_SIZE_FLOOR_PX = 72;
+// 바깥 원(halo) 지름의 px 상하한 — HALO_MIN_VMIN/HALO_MAX_VMIN의 대략적인 px 환산값.
+// 하한은 오브 본체(ORB_SIZE_FLOOR_PX=40px)보다 살짝만 큰 값으로 둬서, 볼륨 0%일 때
+// 바깥 원이 오브를 감싸는 얇은 테두리 정도로만 보이게 한다.
+const HALO_SIZE_FLOOR_PX = 46;
 const HALO_SIZE_CEILING_PX = 220;
 
 interface AmbientOrbProps {
@@ -45,6 +48,10 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
   const wrapRef = useRef<HTMLDivElement>(null);
   const [isDraggingOrb, setIsDraggingOrb] = useState(false);
   const [haloState, setHaloState] = useState<"idle" | "hint" | "grabbed">("idle");
+  // 바깥 원 가장자리 위 지금 커서 위치에 맞는 리사이즈 커서(수평/수직/대각선 양쪽 화살표).
+  // hover/드래그 중일 때만 값이 있고, idle(가장자리에서 벗어남)로 돌아가면 다시 null이 되어
+  // 다른 오브와 똑같은 기본 커서로 돌아간다.
+  const [haloCursor, setHaloCursor] = useState<string | null>(null);
   const dragStartRef = useRef({ clientX: 0, clientY: 0, originX: x, originY: y });
 
   const Icon = sound.icon;
@@ -98,10 +105,13 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
       if ((event.target as HTMLElement).closest("button")) return; // 오브 본체/삭제 버튼은 각자 처리
       const center = wrapCenter();
       if (!center) return;
-      const distVmin = pxToVmin(Math.hypot(event.clientX - center.x, event.clientY - center.y));
+      const dx = event.clientX - center.x;
+      const dy = event.clientY - center.y;
+      const distVmin = pxToVmin(Math.hypot(dx, dy));
       if (Math.abs(distVmin - haloRadiusVmin) > HALO_TOLERANCE_VMIN) return;
       event.currentTarget.setPointerCapture(event.pointerId);
       setHaloState("grabbed");
+      setHaloCursor(resizeCursorFromAngle(dx, dy));
     },
     [haloRadiusVmin, wrapCenter]
   );
@@ -110,14 +120,19 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
     (event: React.PointerEvent<HTMLDivElement>) => {
       const center = wrapCenter();
       if (!center) return;
-      const distVmin = pxToVmin(Math.hypot(event.clientX - center.x, event.clientY - center.y));
+      const dx = event.clientX - center.x;
+      const dy = event.clientY - center.y;
+      const distVmin = pxToVmin(Math.hypot(dx, dy));
 
       if (haloState === "grabbed") {
         const clampedRadiusVmin = Math.min(HALO_MAX_VMIN, Math.max(HALO_MIN_VMIN, distVmin));
         onVolumeChange(id, volumeFromRadiusVmin(clampedRadiusVmin));
+        setHaloCursor(resizeCursorFromAngle(dx, dy));
         return;
       }
-      setHaloState(Math.abs(distVmin - haloRadiusVmin) <= HALO_TOLERANCE_VMIN ? "hint" : "idle");
+      const isOnEdge = Math.abs(distVmin - haloRadiusVmin) <= HALO_TOLERANCE_VMIN;
+      setHaloState(isOnEdge ? "hint" : "idle");
+      setHaloCursor(isOnEdge ? resizeCursorFromAngle(dx, dy) : null);
     },
     [id, haloState, haloRadiusVmin, onVolumeChange, wrapCenter]
   );
@@ -132,19 +147,30 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
         }
       }
       setHaloState("idle");
+      setHaloCursor(null);
     },
     [haloState]
   );
 
   const handleHaloPointerLeave = useCallback(() => {
-    if (haloState !== "grabbed") setHaloState("idle");
+    if (haloState !== "grabbed") {
+      setHaloState("idle");
+      setHaloCursor(null);
+    }
   }, [haloState]);
 
   return (
     <div
       ref={wrapRef}
       className="group absolute -translate-x-1/2 -translate-y-1/2 animate-orb-enter"
-      style={{ left: `${x}%`, top: `${y}%`, width: WRAP_SIZE_CSS, height: WRAP_SIZE_CSS, pointerEvents: "auto" }}
+      style={{
+        left: `${x}%`,
+        top: `${y}%`,
+        width: WRAP_SIZE_CSS,
+        height: WRAP_SIZE_CSS,
+        pointerEvents: "auto",
+        cursor: haloCursor ?? undefined,
+      }}
       onPointerDown={handleHaloPointerDown}
       onPointerMove={handleHaloPointerMove}
       onPointerUp={handleHaloPointerUp}
@@ -158,11 +184,11 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
           style={{
             width: haloSizeCss,
             height: haloSizeCss,
-            background: `radial-gradient(circle, color-mix(in srgb, ${sound.accent} ${haloState === "idle" ? 13 : 17}%, transparent) 0%, color-mix(in srgb, ${sound.accent} ${haloState === "idle" ? 5 : 7}%, transparent) 55%, transparent 78%)`,
+            background: `radial-gradient(circle, color-mix(in srgb, ${sound.accent} ${haloState === "idle" ? 13 : 22}%, transparent) 0%, color-mix(in srgb, ${sound.accent} ${haloState === "idle" ? 5 : 9}%, transparent) 55%, transparent 78%)`,
             boxShadow:
               haloState === "idle"
                 ? `0 0 0 1px color-mix(in srgb, ${sound.accent} 20%, transparent) inset`
-                : `0 0 0 1.5px color-mix(in srgb, ${sound.accent} ${haloState === "grabbed" ? 55 : 45}%, transparent) inset, 0 0 20px -2px color-mix(in srgb, ${sound.accent} 40%, transparent)`,
+                : `0 0 0 ${haloState === "grabbed" ? 3 : 2.5}px color-mix(in srgb, ${sound.accent} ${haloState === "grabbed" ? 62 : 50}%, transparent) inset, 0 0 22px -2px color-mix(in srgb, ${sound.accent} 45%, transparent)`,
           }}
         />
 
