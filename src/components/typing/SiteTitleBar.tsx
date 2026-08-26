@@ -11,11 +11,14 @@ interface SiteTitleBarProps {
   isVisible: boolean;
   onHide: () => void;
   onShow: () => void;
+  titleFontFamily: string;
 }
 
+// 이름이 있으면 "나"는 빼고 입력한 이름만 주어로 쓴다("나 화선에게" 아니라 "화선에게").
+// 이름이 없을 때만 "나에게"로 남는다.
 function buildTitle(recipientName: string, setLabel: string): string {
   const trimmed = recipientName.trim();
-  const recipientPart = trimmed ? `나 ${trimmed}에게` : "나에게";
+  const recipientPart = trimmed ? `${trimmed}에게` : "나에게";
   return `${recipientPart} 보내는 #${setLabel}의 메시지`;
 }
 
@@ -26,6 +29,7 @@ export default function SiteTitleBar({
   isVisible,
   onHide,
   onShow,
+  titleFontFamily,
 }: SiteTitleBarProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(recipientName);
@@ -81,6 +85,7 @@ export default function SiteTitleBar({
           onClick={() => setIsEditing((prev) => !prev)}
           aria-label="사이트 제목 편집"
           className="rounded px-1 text-base text-white/60 transition-colors hover:text-white/90 sm:text-lg"
+          style={{ fontFamily: titleFontFamily }}
         >
           {buildTitle(recipientName, setLabel)}
         </button>
@@ -127,7 +132,9 @@ export default function SiteTitleBar({
             <span className="shrink-0 text-xs text-white/60">에게</span>
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <span className="truncate text-[11px] text-white/40">{buildTitle(draftName, setLabel)}</span>
+            <span className="truncate text-[11px] text-white/40" style={{ fontFamily: titleFontFamily }}>
+              {buildTitle(draftName, setLabel)}
+            </span>
             <button
               type="button"
               onClick={handleSubmit}
