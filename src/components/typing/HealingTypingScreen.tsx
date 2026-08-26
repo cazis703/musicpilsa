@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import AmbientOrbLayer from "@/components/audio/AmbientOrbLayer";
 import AudioController from "@/components/audio/AudioController";
 import BackgroundVideoLayer from "@/components/background/BackgroundVideoLayer";
 import StarfieldBackground from "@/components/background/StarfieldBackground";
@@ -13,6 +14,7 @@ import ThemeSwitcher from "@/components/typing/ThemeSwitcher";
 import { SENTENCE_SET_META } from "@/data/sentences";
 import { DEFAULT_KEY_SWITCH } from "@/data/keySwitches";
 import { attemptAutoplay, DEFAULT_BGM_VOLUME, useAudioControls } from "@/hooks/useAudioControls";
+import { useAmbientSounds } from "@/hooks/useAmbientSounds";
 import { useBackgroundMedia } from "@/hooks/useBackgroundMedia";
 import { DEFAULT_FONT_FAMILY, useFontSettings, type FontFamilyId } from "@/hooks/useFontSettings";
 import { DEFAULT_SENTENCE_TONE, useSentenceTone } from "@/hooks/useSentenceTone";
@@ -58,6 +60,14 @@ export default function HealingTypingScreen() {
   const { videoStatus, audioStatus, videoRef, audioRef, videoSrc, audioSrc, nextVideo, nextAudio, previousAudio } =
     useBackgroundMedia();
   const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
+  const {
+    activeIds: ambientActiveIds,
+    positions: ambientPositions,
+    toggleSound: toggleAmbientSound,
+    setPosition: setAmbientPosition,
+    setVolume: setAmbientVolume,
+    resumeAll: resumeAmbientSounds,
+  } = useAmbientSounds();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const hasAttemptedAutoplayRef = useRef(false);
   const typingInputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +76,8 @@ export default function HealingTypingScreen() {
     if (hasAttemptedAutoplayRef.current) return;
     hasAttemptedAutoplayRef.current = true;
     attemptAutoplay(audioRef.current);
-  }, [audioRef]);
+    resumeAmbientSounds();
+  }, [audioRef, resumeAmbientSounds]);
 
   useEffect(() => {
     typingInputRef.current?.focus();
@@ -172,6 +183,14 @@ export default function HealingTypingScreen() {
       setTone(nextTone);
     },
     [playClickSound, setTone]
+  );
+
+  const handleToggleAmbientSound = useCallback(
+    (id: Parameters<typeof toggleAmbientSound>[0]) => {
+      playClickSound();
+      toggleAmbientSound(id);
+    },
+    [playClickSound, toggleAmbientSound]
   );
 
   const handleOpenSettings = useCallback(() => {
@@ -312,6 +331,7 @@ export default function HealingTypingScreen() {
           isVisible={isTitleVisible}
           onHide={hideTitle}
           onShow={showTitle}
+          titleFontFamily={fontStyle.fontFamily ?? "var(--font-sans)"}
         />
       </div>
 
@@ -335,6 +355,13 @@ export default function HealingTypingScreen() {
           <SkipButton onSkip={handleSkip} />
         </div>
       </div>
+
+      <AmbientOrbLayer
+        positions={ambientPositions}
+        onPositionChange={setAmbientPosition}
+        onVolumeChange={setAmbientVolume}
+        onRemove={toggleAmbientSound}
+      />
 
       <AudioController
         audioRef={audioRef}
@@ -397,6 +424,8 @@ export default function HealingTypingScreen() {
         onResetFontWeight={handleResetFontWeight}
         fontFamily={fontFamily}
         onSelectFontFamily={handleSelectFontFamily}
+        ambientActiveIds={ambientActiveIds}
+        onToggleAmbientSound={handleToggleAmbientSound}
       />
       </div>
     </main>

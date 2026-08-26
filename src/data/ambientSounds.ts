@@ -1,0 +1,146 @@
+import {
+  BubblesIcon,
+  CricketIcon,
+  FlameIcon,
+  PageFlipIcon,
+  PencilIcon,
+  RainDropIcon,
+  SingingBowlIcon,
+  WaveIcon,
+  WindChimesIcon,
+} from "@/components/ui/icons";
+import type { AmbientSoundId, AmbientSoundMeta } from "@/types/ambientSound";
+
+// 모든 파일은 원본(비압축 WAV/FLAC, 최대 96kHz/24bit — 웹에서 필요 없는 고음질)을 ffmpeg로
+// MP3(libmp3lame, VBR -q:a 4)로 재인코딩한 것. 연필/책장 넘김/풀벌레는 애초에 실제로 쓰는
+// 구간(0~5초/0~10초/0~45초)만 잘라서 인코딩했기 때문에(과거엔 전체 파일을 내려받아 놓고
+// <audio> 재생 구간만 JS로 제한했음 — 안 쓰는 뒷부분까지 통째로 다운로드하는 낭비였다),
+// 파일 자체가 곧 재생 구간이라 clipEndSec 없이 그냥 loop를 걸면 된다.
+//
+// defaultX/defaultY는 좌/우, 상/하 여백이 대칭이 되도록 14%~86% 범위 안에서 잡는다
+// (원래 목업의 값(6~93%)은 좌우/상하 여백이 서로 달라서, 위치를 화면 안에 가두는 clamp
+// 여백이 작아지면 어떤 소리는 가장자리에 딱 붙어 시작하고 어떤 소리는 넉넉히 떨어져
+// 시작하는 것처럼 보였다).
+export const AMBIENT_SOUNDS: AmbientSoundMeta[] = [
+  {
+    id: "sea",
+    label: "파도 소리",
+    icon: WaveIcon,
+    accent: "#5fb8e6",
+    src: "/media/ambient/ocean-waves.mp3",
+    defaultX: 14,
+    defaultY: 22,
+    defaultVolume: 0.55,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "rain",
+    label: "빗소리",
+    icon: RainDropIcon,
+    accent: "#7fc7e0",
+    src: "/media/ambient/gentle-rain.mp3",
+    defaultX: 86,
+    defaultY: 18,
+    defaultVolume: 0.4,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "fire",
+    label: "장작불",
+    icon: FlameIcon,
+    accent: "#f2b775",
+    src: "/media/ambient/campfire-crackle.mp3",
+    defaultX: 14,
+    defaultY: 62,
+    defaultVolume: 0.6,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "cricket",
+    label: "풀벌레",
+    icon: CricketIcon,
+    accent: "#8fe0a6",
+    src: "/media/ambient/crickets-night.mp3",
+    defaultX: 86,
+    defaultY: 62,
+    defaultVolume: 0.45,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "bowl",
+    label: "싱잉볼",
+    icon: SingingBowlIcon,
+    accent: "#c9a6e8",
+    src: "/media/ambient/singing-bowl.mp3",
+    defaultX: 22,
+    defaultY: 86,
+    defaultVolume: 0.5,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "chimes",
+    label: "풍경",
+    icon: WindChimesIcon,
+    accent: "#d9c2f0",
+    src: "/media/ambient/wind-chimes.mp3",
+    defaultX: 78,
+    defaultY: 86,
+    defaultVolume: 0.5,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "boil",
+    label: "끓는 물",
+    icon: BubblesIcon,
+    accent: "#e0c27a",
+    src: "/media/ambient/boiling-water.mp3",
+    defaultX: 50,
+    defaultY: 14,
+    defaultVolume: 0.35,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1,
+  },
+  {
+    id: "pencil",
+    label: "연필 필기",
+    icon: PencilIcon,
+    accent: "#e8a98e",
+    src: "/media/ambient/pencil-writing.mp3",
+    defaultX: 25,
+    defaultY: 44,
+    defaultVolume: 0.5,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 1 / 1.5,
+  },
+  {
+    id: "pages",
+    label: "책장 넘김",
+    icon: PageFlipIcon,
+    accent: "#e8927e",
+    src: "/media/ambient/page-flipping.mp3",
+    defaultX: 75,
+    defaultY: 44,
+    defaultVolume: 0.5,
+    clipStartSec: 0,
+    clipEndSec: null,
+    playbackRate: 0.5,
+  },
+];
+
+export function getAmbientSoundMeta(id: AmbientSoundId): AmbientSoundMeta | undefined {
+  return AMBIENT_SOUNDS.find((sound) => sound.id === id);
+}

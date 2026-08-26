@@ -18,6 +18,7 @@ import {
   SwitchIcon,
 } from "@/components/ui/icons";
 import { KEY_SWITCH_OPTIONS, type KeySwitchType } from "@/data/keySwitches";
+import { AMBIENT_SOUNDS } from "@/data/ambientSounds";
 import { MAX_RECIPIENT_NAME_LENGTH } from "@/hooks/useSiteTitle";
 import {
   MAX_FONT_SIZE_REM,
@@ -27,6 +28,7 @@ import {
   type FontFamilyId,
 } from "@/hooks/useFontSettings";
 import type { SentenceSetId, SentenceSetMeta, SentenceTone } from "@/types/sentence";
+import type { AmbientSoundId } from "@/types/ambientSound";
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -69,6 +71,9 @@ interface SettingsDrawerProps {
   onResetFontWeight: () => void;
   fontFamily: FontFamilyId;
   onSelectFontFamily: (id: FontFamilyId) => void;
+
+  ambientActiveIds: AmbientSoundId[];
+  onToggleAmbientSound: (id: AmbientSoundId) => void;
 }
 
 // "위로" Set은 청자가 "당신"이라 하다체로 바꾸면 반말처럼 들려 어색하므로, 하다체/습니다체
@@ -126,6 +131,8 @@ export default function SettingsDrawer({
   onResetFontWeight,
   fontFamily,
   onSelectFontFamily,
+  ambientActiveIds,
+  onToggleAmbientSound,
 }: SettingsDrawerProps) {
   useEffect(() => {
     if (!isOpen) return;
@@ -424,10 +431,56 @@ export default function SettingsDrawer({
               </div>
             </section>
 
-            {/* 5. 배경음 추가·삭제 — 다음 단계에서 채울 예정 */}
+            {/* 5. 배경음 추가·삭제 — 목록에서 켜면 화면에 오브가 뜨고, 끄면 사라진다 */}
             <section className="pt-5">
               <SectionHeading>배경음</SectionHeading>
-              <p className="text-xs text-white/40">파도, 빗소리 같은 배경음을 추가하는 기능이 곧 추가돼요.</p>
+              <ul className="flex flex-col gap-0.5">
+                {AMBIENT_SOUNDS.map((sound) => {
+                  const SoundIcon = sound.icon;
+                  const isOn = ambientActiveIds.includes(sound.id);
+                  return (
+                    <li key={sound.id}>
+                      <button
+                        type="button"
+                        onClick={() => onToggleAmbientSound(sound.id)}
+                        aria-pressed={isOn}
+                        className="flex w-full items-center gap-3 rounded-xl px-1 py-2 text-left transition-colors hover:bg-white/5"
+                      >
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors"
+                          style={
+                            isOn
+                              ? {
+                                  borderColor: sound.accent,
+                                  color: sound.accent,
+                                  background: `color-mix(in srgb, ${sound.accent} 18%, transparent)`,
+                                }
+                              : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }
+                          }
+                        >
+                          <SoundIcon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="flex-1 text-xs text-white">{sound.label}</span>
+                        <span
+                          className="relative h-[19px] w-[34px] shrink-0 rounded-full transition-colors"
+                          style={{
+                            background: isOn ? `color-mix(in srgb, ${sound.accent} 55%, transparent)` : "rgba(255,255,255,0.18)",
+                          }}
+                        >
+                          <span
+                            className="absolute top-0.5 h-[15px] w-[15px] rounded-full transition-transform"
+                            style={{
+                              left: 2,
+                              transform: isOn ? "translateX(15px)" : "translateX(0)",
+                              background: isOn ? sound.accent : "rgba(255,255,255,0.6)",
+                            }}
+                          />
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
 
             <p className="mt-2 pt-8 text-center text-[10px] text-white/25">ⓒ 2026 cazis</p>

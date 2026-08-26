@@ -314,3 +314,104 @@ export function CloseIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+// ---- 배경음 오브 아이콘 (9종) ----
+
+export function WaveIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M2 10c2-2.5 4-2.5 6 0s4 2.5 6 0 4-2.5 6 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M2 15c2-2.5 4-2.5 6 0s4 2.5 6 0 4-2.5 6 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+export function RainDropIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 3.5c3.2 4.2 5.5 7.4 5.5 10.3a5.5 5.5 0 0 1-11 0c0-2.9 2.3-6.1 5.5-10.3z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function FlameIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 2.5c1 3-2.2 4.3-2.2 7.3a2.7 2.7 0 0 0 5.4 0c0-.9-.4-1.7-.8-2.5 1.9 1.4 3.6 4 3.6 6.7a6.5 6.5 0 0 1-13 0c0-5 4.4-7.6 7-11.5z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CricketIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M4.5 19.5c8.5 0 15-6.5 15-15-8.5 0-15 6.5-15 15z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M4.5 19.5c3.5-3.5 7-7 11-11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+export function SingingBowlIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 13.5a8 4 0 0 0 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M9 8.2a3 3 0 0 1 6 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
+      <path d="M7 5.3a5.2 5.2 0 0 1 10 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.3" />
+    </svg>
+  );
+}
+
+export function WindChimesIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <line x1="4" y1="4.5" x2="20" y2="4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="7.5" y1="4.5" x2="7.5" y2="13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="7.5" cy="15" r="1.5" fill="currentColor" />
+      <line x1="12" y1="4.5" x2="12" y2="17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.5" fill="currentColor" />
+      <line x1="16.5" y1="4.5" x2="16.5" y2="11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16.5" cy="13" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function BubblesIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <line x1="4" y1="19" x2="20" y2="19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="9.5" cy="16" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="13.5" cy="11.5" r="2.1" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="10.5" cy="6.8" r="1.3" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function PageFlipIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 5.3c3-1.1 6-1.1 8 .8v12.6c-2-1.9-5-1.9-8-.8V5.3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path
+        d="M20 5.3c-3-1.1-6-1.1-8 .8v12.6c2-1.9 5-1.9 8-.8V5.3z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+        opacity="0.6"
+      />
+    </svg>
+  );
+}
