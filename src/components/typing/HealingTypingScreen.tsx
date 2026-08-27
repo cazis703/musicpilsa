@@ -97,7 +97,7 @@ export default function HealingTypingScreen() {
   // 배경 영상이 준비되면(성공/실패 무관, 기존 3초 타임아웃 로직 그대로 재사용) 로딩 화면을
   // 내린다. 다만 로딩이 너무 빨리 끝나면 프로그레스 바가 깜빡이듯 스치기만 하고 사라져
   // 오히려 어색하므로, 최소 노출 시간을 둬서 그보다 빨리 끝나도 그만큼은 채워서 보여준다.
-  const MIN_LOADING_MS = 550;
+  const MIN_LOADING_MS = 2200;
   const [isAppReady, setIsAppReady] = useState(false);
   const loadStartRef = useRef<number>(Date.now());
   useEffect(() => {
@@ -371,7 +371,7 @@ export default function HealingTypingScreen() {
       <div className="relative z-20 flex min-h-screen flex-col items-center justify-center gap-10">
         <div
           className={isAppReady ? "animate-fade-up-in" : "opacity-0"}
-          style={isAppReady ? { animationDelay: "90ms" } : undefined}
+          style={isAppReady ? { animationDelay: "220ms" } : undefined}
         >
           <SentenceTypingArea
             sentence={targetText}
@@ -387,7 +387,7 @@ export default function HealingTypingScreen() {
 
         <div
           className={`flex items-center gap-4 ${isAppReady ? "animate-fade-up-in" : "opacity-0"}`}
-          style={isAppReady ? { animationDelay: "160ms" } : undefined}
+          style={isAppReady ? { animationDelay: "420ms" } : undefined}
         >
           <ThemeSwitcher sets={SENTENCE_SET_META} activeSetId={activeSetId} onSelect={handleSelectSet} />
           <span className="h-3.5 w-px bg-white/20" aria-hidden="true" />
@@ -425,7 +425,7 @@ export default function HealingTypingScreen() {
         onKeySwitchTypeChange={setKeySwitchType}
         onOpenSettings={handleOpenSettings}
         isRevealed={isAppReady}
-        revealDelayMs={220}
+        revealDelayMs={620}
       />
 
       {/* SettingsDrawer 안에는 이름 입력창이 있어서 SiteTitleBar와 마찬가지로 클릭이
