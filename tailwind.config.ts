@@ -28,9 +28,15 @@ const config: Config = {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        // 단순 상하 왕복(translateY만)보다 "둥둥 떠 있는" 느낌을 주기 위해 살짝 원을
+        // 그리듯 좌우로도 드리프트한다. 각 오브의 실제 재생 속도/딜레이는
+        // AmbientOrb.tsx에서 사운드 id마다 다르게 줘서(desync) 여러 개가 켜져 있어도
+        // 전부 같은 박자로 움직이지 않게 한다.
         "orb-bob": {
-          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
-          "50%": { transform: "translateY(-9px) rotate(2.5deg)" },
+          "0%, 100%": { transform: "translate(0, 0) rotate(0deg)" },
+          "25%": { transform: "translate(5px, -11px) rotate(1.5deg)" },
+          "50%": { transform: "translate(0, -16px) rotate(0deg)" },
+          "75%": { transform: "translate(-5px, -9px) rotate(-1.5deg)" },
         },
         // translate(-50%, -50%)를 반드시 함께 넣어야 한다 — 애니메이션이 transform 전체를
         // 덮어써버리므로, 이걸 빼면 wrap에 걸어둔 -translate-x-1/2 -translate-y-1/2(오브를

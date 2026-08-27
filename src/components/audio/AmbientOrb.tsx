@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { CloseIcon } from "@/components/ui/icons";
 import {
   HALO_MAX_VMIN,
@@ -52,6 +52,12 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
   const dragStartRef = useRef({ clientX: 0, clientY: 0, originX: x, originY: y });
 
   const Icon = sound.icon;
+  // id 문자열을 시드로 딜레이/재생 속도를 오브마다 조금씩 다르게 줘서, 여러 개를 켜둬도
+  // 전부 같은 박자로 둥둥 뜨지 않고 제각각 유영하는 것처럼 보이게 한다.
+  const { bobDelaySec, bobDurationSec } = useMemo(() => {
+    const seed = id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return { bobDelaySec: (seed % 40) / 10, bobDurationSec: 7 + (seed % 5) };
+  }, [id]);
   const haloRadiusVmin = radiusVminFromVolume(volume);
   const haloDiameterVmin = haloRadiusVmin * 2;
   const haloSizeCss = `clamp(${HALO_SIZE_FLOOR_PX}px, ${haloDiameterVmin}vmin, ${HALO_SIZE_CEILING_PX}px)`;
@@ -158,6 +164,11 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
     }
   }, [haloState]);
 
+  // 위치 드래그 중이든(isDraggingOrb) 볼륨 조절 중이든(haloState === "grabbed") 둥둥
+  // 뜨는 애니메이션은 멈춘다 — 켜져 있으면 히트테스트가 기준으로 삼는 정지된 중심과
+  // 실제로 흔들리는 시각적 위치가 어긋나 조작감이 흔들린다.
+  const isBobActive = !isDraggingOrb && haloState !== "grabbed";
+
   return (
     <div
       ref={wrapRef}
@@ -176,7 +187,14 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
       onPointerCancel={handleHaloPointerUp}
       onPointerLeave={handleHaloPointerLeave}
     >
-      <div className={`absolute inset-0 ${isDraggingOrb ? "" : "animate-orb-bob"}`}>
+      <div
+        className={`absolute inset-0 ${isBobActive ? "animate-orb-bob" : ""}`}
+        style={
+          isBobActive
+            ? { animationDelay: `${bobDelaySec}s`, animationDuration: `${bobDurationSec}s` }
+            : undefined
+        }
+      >
         {/* 바깥 원(halo) — 반지름 자체가 볼륨을 나타낸다 */}
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background,box-shadow] duration-200"
