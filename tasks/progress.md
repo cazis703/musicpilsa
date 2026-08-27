@@ -173,4 +173,14 @@
   - 타이틀→문장입력창→버튼줄→하단 컨트롤바 순차 등장 딜레이 0/90/160/220ms → 0/220/420/620ms, `fade-up-in`/`fade-up-in-x` 애니메이션 길이 0.6s → 1s.
 - **검증 중 겪은 삽질**: Playwright로 실측하다가 로딩화면이 영원히 안 사라지는 것처럼 보이는 현상을 발견해 원인 조사. 임시로 앱 코드에 `window.__debug`(videoStatus/isAppReady 노출)를 잠깐 추가해 확인해보니 실제로는 `isAppReady`가 설계대로 정확히 ~2.86초에 `true`로 바뀌고 있었음 — **진짜 원인은 검증 스크립트 쪽 버그**: `querySelector('[aria-hidden="true"].fixed.inset-0')`가 매칭 조건을 만족하는 여러 요소 중 첫 번째(로딩 화면이 아니라 `StarfieldBackground`의 `<canvas>`, 이 요소는 원래 항상 `opacity:1`로 계속 떠 있는 게 정상)를 잘못 짚고 있었던 것. 셀렉터를 로딩 화면 전용 클래스(`z-[100]`)로 좁혀서 재검증하니 정상 동작 확인됨. 디버그용으로 넣었던 `window.__debug` 코드는 검증 후 제거.
 - **최종 검증**: `npm run typecheck` 통과. 프로덕션 빌드(`next build && next start`, 포트 3450)로 Playwright 실측 — 로딩 화면이 t≈2.75초에 페이드 시작해 0.9초에 걸쳐 매끄럽게(opacity 0.86→0.53→0.34→0.12→0.04→0.01) 사라짐, 이후 요소 4개가 설계한 딜레이(0/220/420/620ms)대로 순차 등장, 콘솔 에러 없음. 스크린샷으로 최종 화면도 확인(정상).
-- **아직 배포 전** — 사용자에게 배포 여부 확인 후 진행 예정. 이번에도 진단용 Playwright는 스크래치패드에만 설치(프로젝트 의존성 미추가), 검증에 쓴 프로덕션 서버(포트 3450)는 확인 후 종료함.
+- **배포**: `git push origin main`(`2bf6f3f`) 후 `vercel --prod` 배포, `musicpilsa.vercel.app` 200 확인.
+
+## 2026-08-27 — 타이핑 스파클(파티클) 위치 이탈 버그 발견 및 수정
+
+- **사용자 피드백**: 위 로딩 연출 배포 직후 "타이핑할 때 스파클 위치가 바뀌었다, 롤백해야 될 것 같은데 왜 그게 거기에 영향을 미치는지 모르겠다."
+- **원인 조사**: 타이핑 글로우 파티클을 그리는 `CharParticleCanvas`(`position: fixed; inset: 0`)가 `SentenceTypingArea` 안에 있었고, `SentenceTypingArea` 전체가 `HealingTypingScreen`에서 로딩 연출용 `animate-fade-up-in` 클래스가 걸린 `<div>`로 감싸져 있었음. CSS 스펙상 **조상 요소에 `transform`이 적용되면 그 안의 `position: fixed` 자손은 뷰포트가 아니라 그 조상을 기준으로 위치가 잡힌다** — `fade-up-in` 애니메이션은 `fill-mode: both`라 애니메이션이 끝난 뒤에도 keyframe의 마지막 값(`transform: translateY(0)`)이 계속 적용된 채로 남는데, `translateY(0)`도 `none`이 아니라서 이 규칙이 계속 발동함. 그 결과 파티클 캔버스가 뷰포트 전체가 아니라 문장입력창 래퍼 박스 기준으로 위치가 잡혀, `getBoundingClientRect()`로 계산한 글자의 실제 화면 좌표에 파티클을 그려도 캔버스 자체가 엉뚱한 곳에 있어 스파클이 밀려 보였음.
+  - Playwright로 실측: 수정 전 파티클 캔버스의 `getBoundingClientRect()`가 `(333, 307)`에서 시작(뷰포트는 `(0,0)`이어야 정상) — 조상(`animate-fade-up-in`)의 `transform: matrix(1,0,0,1,0,0)`(단위행렬이지만 `none`이 아님)이 원인임을 확인.
+  - 이 버그는 오늘 조정한 타이밍 값 때문이 아니라, **로딩 연출을 처음 도입한 시점(`0c1b1b8`)부터 있던 구조적 버그** — 문장입력창을 `fade-up-in`으로 감싸면서 그 안에 있던 파티클 캔버스까지 함께 갇힌 것. 그때는 로딩/오디오 확인에 집중하느라 스파클 위치는 별도로 검증하지 않아 놓쳤던 것으로 보임.
+- **수정**: `CharParticleCanvas`와 그 핸들(`particleHandleRef`)을 `SentenceTypingArea` 내부에서 `HealingTypingScreen` 최상위(애니메이션 래퍼 밖, `AmbientOrbLayer`와 같은 레벨)로 옮김. `SentenceTypingArea`는 이제 `onGlowStart` 콜백을 prop으로 받아 `TypingChar`에 그대로 전달만 하고, 실제 파티클 생성(`spawnAt`)은 부모가 담당.
+- **검증**: `npm run typecheck` 통과. 프로덕션 빌드로 Playwright 실측 — 수정 후 파티클 캔버스가 정확히 `(0,0)`~뷰포트 크기로 잡히고 조상에 transform 없음 확인. 실제 목표 문장("누구에게도 말 못한 마음...")의 앞 4글자를 그대로 타이핑시켜 스크린샷 확인한 결과 스파클이 정확히 "누구에게" 글자 위치에 뜸. 콘솔 에러 없음.
+- **배포**: 커밋 예정, `git push origin main` 후 `vercel --prod` 배포.

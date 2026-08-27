@@ -1,12 +1,8 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import CharParticleCanvas, {
-  type CharParticleCanvasHandle,
-} from "@/components/typing/CharParticleCanvas";
 import TypingChar from "@/components/typing/TypingChar";
 import { useCharEffects } from "@/hooks/useCharEffects";
-import { PARTICLES_PER_CHAR } from "@/lib/particle-utils";
 import type { CharState } from "@/types/typing";
 
 interface SentenceTypingAreaProps {
@@ -18,6 +14,7 @@ interface SentenceTypingAreaProps {
   onCompositionEnd: (event: React.CompositionEvent<HTMLInputElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   onBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onGlowStart: (x: number, y: number) => void;
 }
 
 // 목표 문장 레이어와 입력창이 반드시 같은 폰트 크기/굵기/자간으로 렌더링되어야
@@ -52,16 +49,12 @@ export default function SentenceTypingArea({
   onCompositionEnd,
   onKeyDown,
   onBlur,
+  onGlowStart,
 }: SentenceTypingAreaProps) {
   const { visualCharStates } = useCharEffects(charStates);
-  const particleHandleRef = useRef<CharParticleCanvasHandle | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const charRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const [caretRect, setCaretRect] = useState<CaretRect | null>(null);
-
-  const handleGlowStart = (x: number, y: number) => {
-    particleHandleRef.current?.spawnAt(x, y, PARTICLES_PER_CHAR);
-  };
 
   // 보이지 않는 <input>의 브라우저 기본 커서에 의존하지 않고, 실제로 화면에 그려진 글자
   // span의 좌표를 직접 읽어 커서 위치를 계산한다. 두 레이어(글자 표시용 <p> / 입력용
@@ -119,7 +112,7 @@ export default function SentenceTypingArea({
             state={charState.status}
             isTypo={charState.isTypo}
             isComposingChar={charState.isComposingChar}
-            onGlowStart={handleGlowStart}
+            onGlowStart={onGlowStart}
           />
         ))}
       </p>
@@ -153,8 +146,6 @@ export default function SentenceTypingArea({
         className={`absolute inset-0 m-0 whitespace-nowrap border-0 bg-transparent p-0 text-left leading-relaxed text-transparent caret-transparent outline-none ${TYPING_FONT_CLASS}`}
         style={fontStyle}
       />
-
-      <CharParticleCanvas handleRef={particleHandleRef} />
     </div>
   );
 }

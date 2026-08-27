@@ -6,6 +6,9 @@ import AudioController from "@/components/audio/AudioController";
 import BackgroundVideoLayer from "@/components/background/BackgroundVideoLayer";
 import StarfieldBackground from "@/components/background/StarfieldBackground";
 import LoadingScreen from "@/components/loading/LoadingScreen";
+import CharParticleCanvas, {
+  type CharParticleCanvasHandle,
+} from "@/components/typing/CharParticleCanvas";
 import RewriteButton from "@/components/typing/RewriteButton";
 import SentenceTypingArea from "@/components/typing/SentenceTypingArea";
 import SettingsDrawer from "@/components/typing/SettingsDrawer";
@@ -22,6 +25,7 @@ import { DEFAULT_SENTENCE_TONE, useSentenceTone } from "@/hooks/useSentenceTone"
 import { useSentenceTyping } from "@/hooks/useSentenceTyping";
 import { useSiteTitle } from "@/hooks/useSiteTitle";
 import { DEFAULT_SFX_VOLUME, useSoundEffects } from "@/hooks/useSoundEffects";
+import { PARTICLES_PER_CHAR } from "@/lib/particle-utils";
 import { clampTypedValue } from "@/lib/typing-judge";
 import type { SentenceSetId, SentenceTone } from "@/types/sentence";
 
@@ -93,6 +97,15 @@ export default function HealingTypingScreen() {
       window.removeEventListener("keydown", handleFirstInteraction, { capture: true });
     };
   }, [handleFirstInteraction]);
+
+  // 타이핑 글로우 파티클 캔버스는 반드시 애니메이션(transform)이 걸리는 조상 밖에서 렌더링해야
+  // 한다 — 조상에 transform이 적용되면(fade-up-in처럼 애니메이션이 끝난 뒤에도 fill-mode: both로
+  // translateY(0)가 남아있는 경우 포함) 그 안의 position: fixed 캔버스는 뷰포트가 아니라 그
+  // 조상 기준으로 위치가 잡혀버려 스파클이 엉뚱한 곳에 나타난다.
+  const particleHandleRef = useRef<CharParticleCanvasHandle | null>(null);
+  const handleGlowStart = useCallback((x: number, y: number) => {
+    particleHandleRef.current?.spawnAt(x, y, PARTICLES_PER_CHAR);
+  }, []);
 
   // 배경 영상이 준비되면(성공/실패 무관, 기존 3초 타임아웃 로직 그대로 재사용) 로딩 화면을
   // 내린다. 다만 로딩이 너무 빨리 끝나면 프로그레스 바가 깜빡이듯 스치기만 하고 사라져
@@ -382,6 +395,7 @@ export default function HealingTypingScreen() {
             onCompositionEnd={handleCompositionEnd}
             onKeyDown={handleKeyDown}
             onBlur={handleTypingInputBlur}
+            onGlowStart={handleGlowStart}
           />
         </div>
 
@@ -396,6 +410,8 @@ export default function HealingTypingScreen() {
           <SkipButton onSkip={handleSkip} />
         </div>
       </div>
+
+      <CharParticleCanvas handleRef={particleHandleRef} />
 
       <AmbientOrbLayer
         positions={ambientPositions}
