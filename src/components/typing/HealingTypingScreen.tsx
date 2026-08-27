@@ -384,7 +384,7 @@ export default function HealingTypingScreen() {
       <div className="relative z-20 flex min-h-screen flex-col items-center justify-center gap-10">
         <div
           className={isAppReady ? "animate-fade-up-in" : "opacity-0"}
-          style={isAppReady ? { animationDelay: "220ms" } : undefined}
+          style={isAppReady ? { animationDelay: "500ms" } : undefined}
         >
           <SentenceTypingArea
             sentence={targetText}
@@ -401,7 +401,7 @@ export default function HealingTypingScreen() {
 
         <div
           className={`flex items-center gap-4 ${isAppReady ? "animate-fade-up-in" : "opacity-0"}`}
-          style={isAppReady ? { animationDelay: "420ms" } : undefined}
+          style={isAppReady ? { animationDelay: "575ms" } : undefined}
         >
           <ThemeSwitcher sets={SENTENCE_SET_META} activeSetId={activeSetId} onSelect={handleSelectSet} />
           <span className="h-3.5 w-px bg-white/20" aria-hidden="true" />
@@ -441,7 +441,7 @@ export default function HealingTypingScreen() {
         onKeySwitchTypeChange={setKeySwitchType}
         onOpenSettings={handleOpenSettings}
         isRevealed={isAppReady}
-        revealDelayMs={620}
+        revealDelayMs={650}
       />
 
       {/* SettingsDrawer 안에는 이름 입력창이 있어서 SiteTitleBar와 마찬가지로 클릭이

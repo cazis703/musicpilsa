@@ -38,7 +38,7 @@ export default function LoadingScreen({ isReady }: LoadingScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 transition-opacity ease-out ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black transition-opacity ease-out ${
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
       style={{ transitionDuration: `${FADE_OUT_MS}ms` }}

@@ -88,8 +88,8 @@ const SENTENCE_TONE_OPTIONS: { id: SentenceTone; label: string }[] = [
 ];
 
 const FONT_FAMILY_OPTIONS: { id: FontFamilyId; label: string }[] = [
-  { id: "sans", label: "Sans-Serif (고딕)" },
   { id: "serif", label: "Serif (명조)" },
+  { id: "sans", label: "Sans-Serif (고딕)" },
 ];
 
 function SectionHeading({ children }: { children: React.ReactNode }) {

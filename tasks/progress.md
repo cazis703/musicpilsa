@@ -183,4 +183,17 @@
   - 이 버그는 오늘 조정한 타이밍 값 때문이 아니라, **로딩 연출을 처음 도입한 시점(`0c1b1b8`)부터 있던 구조적 버그** — 문장입력창을 `fade-up-in`으로 감싸면서 그 안에 있던 파티클 캔버스까지 함께 갇힌 것. 그때는 로딩/오디오 확인에 집중하느라 스파클 위치는 별도로 검증하지 않아 놓쳤던 것으로 보임.
 - **수정**: `CharParticleCanvas`와 그 핸들(`particleHandleRef`)을 `SentenceTypingArea` 내부에서 `HealingTypingScreen` 최상위(애니메이션 래퍼 밖, `AmbientOrbLayer`와 같은 레벨)로 옮김. `SentenceTypingArea`는 이제 `onGlowStart` 콜백을 prop으로 받아 `TypingChar`에 그대로 전달만 하고, 실제 파티클 생성(`spawnAt`)은 부모가 담당.
 - **검증**: `npm run typecheck` 통과. 프로덕션 빌드로 Playwright 실측 — 수정 후 파티클 캔버스가 정확히 `(0,0)`~뷰포트 크기로 잡히고 조상에 transform 없음 확인. 실제 목표 문장("누구에게도 말 못한 마음...")의 앞 4글자를 그대로 타이핑시켜 스크린샷 확인한 결과 스파클이 정확히 "누구에게" 글자 위치에 뜸. 콘솔 에러 없음.
+- **배포**: `git push origin main`(`1a7237b`) 후 `vercel --prod` 배포, `musicpilsa.vercel.app` 200 확인.
+
+## 2026-08-27 — 로딩바 색상/등장 연출/기본 폰트 3건 수정
+
+- **사용자 요청 1**: 로딩바 화면의 푸른색 느낌을 걷어내고 블랙 계열로 변경. `LoadingScreen.tsx`의 배경을 `bg-slate-950`(파란기 있는 다크)에서 `bg-black`(순수 블랙)으로 교체.
+- **사용자 요청 2**: 로딩 완료 후 UI/텍스트가 아래에서 살짝 떠오르며 순차 페이드인되는 연출 — 기존에 만든 목업(artifact `180fc441-...`, "Glow Orbs")을 참고하라는 요청.
+  - 처음엔 그 목업(배경음 오브 기능용)에 로딩/페이드인 관련 코드가 없다고 잘못 판단(검색 키워드를 "fade|reveal|entrance|stagger"로 잡아서 실제 키프레임 이름인 `rise`/`rise-bar`를 놓침). 사용자가 "그 사람과 함께 걷던 골목.. 텍스트가 떠오르며 페이드인되지 않냐"고 정확히 짚어줘서 재확인 — 실제로 `.typing-mock`(rise: `translateY(10px)→0`, `opacity 0→1`, 0.8s, 0.5s 딜레이, ease-out)과 `.controlbar-mock`(rise-bar: `translateY(14px)→0`, 0.7s, 0.65s 딜레이, ease-out) 애니메이션이 정확히 존재함을 확인.
+  - `tailwind.config.ts`: `fade-up-in`을 목업의 `rise`와 동일하게(translateY 14px→10px, 커스텀 cubic-bezier→`ease-out`, 1s→0.8s), `fade-up-in-x`를 `rise-bar`와 동일하게(1s→0.7s, ease-out) 조정.
+  - `HealingTypingScreen.tsx`: 문장입력창(SentenceTypingArea) 딜레이 220ms→**500ms**(목업의 `.typing-mock` 그대로), 버튼줄 420ms→575ms(목업에 없는 요소라 문장/하단바 사이로 보간), 하단 컨트롤바(AudioController) 620ms→**650ms**(목업의 `.controlbar-mock` 그대로). 타이틀바는 기존대로 딜레이 0.
+- **사용자 요청 3**: Serif/Sans-Serif 순서를 서로 스위치하고 기본 폰트를 명조(serif)로 — 최초 진입 사용자가 명조체를 보게.
+  - `SettingsDrawer.tsx`의 `FONT_FAMILY_OPTIONS` 배열 순서를 `[sans, serif]` → `[serif, sans]`로 변경(Settings 안 폰트 선택 UI 노출 순서가 이 배열 순서를 그대로 따름).
+  - `useFontSettings.ts`의 `DEFAULT_FONT_FAMILY`를 `"sans"` → `"serif"`로 변경 — Settings의 "Reset" 버튼도 같은 상수를 참조해서 자동으로 명조로 리셋되도록 통일됨(별도 처리 불필요).
+- **검증**: `npm run typecheck` 통과. 프로덕션 빌드로 Playwright 실측 — 로딩 화면 배경색이 `rgb(0,0,0)`(순수 블랙)인 것 확인, 최초 진입 시 문장 텍스트의 `font-family`가 Noto Serif KR로 렌더링되는 것 확인, Settings 드로어의 폰트 옵션이 "Serif (명조)"가 먼저 뜨는 것 확인. 스크린샷으로 전체적인 화면 톤(블랙 계열)과 명조체 적용도 육안 확인. 콘솔 에러 없음.
 - **배포**: 커밋 예정, `git push origin main` 후 `vercel --prod` 배포.
