@@ -5,10 +5,13 @@ import { CloseIcon } from "@/components/ui/icons";
 import {
   HALO_MAX_VMIN,
   HALO_MIN_VMIN,
+  HALO_SIZE_CEILING_PX,
+  HALO_SIZE_FLOOR_PX,
   HALO_TOLERANCE_VMIN,
   ORB_SIZE_CEILING_PX,
   ORB_SIZE_FLOOR_PX,
   ORB_SIZE_VMIN,
+  haloVisualRadiusVmin,
   pxToVmin,
   radiusVminFromVolume,
   resizeCursorFromAngle,
@@ -23,12 +26,6 @@ const WRAP_SIZE_CSS = "clamp(200px, 36vmin, 280px)";
 // clampAmbientPosition(ambient-orb-geometry.ts)의 "화면 밖으로 못 나가는 여백" 계산과
 // 반드시 같은 px 상하한을 써야 실제 렌더 크기와 드래그 한계가 어긋나지 않는다.
 const ORB_SIZE_CSS = `clamp(${ORB_SIZE_FLOOR_PX}px, ${ORB_SIZE_VMIN}vmin, ${ORB_SIZE_CEILING_PX}px)`;
-// 바깥 원(halo) 지름의 px 상하한 — HALO_MIN_VMIN/HALO_MAX_VMIN의 대략적인 px 환산값.
-// 하한은 오브 본체(ORB_SIZE_FLOOR_PX=40px)보다 살짝만 큰 값으로 둬서, 볼륨 0%일 때
-// 바깥 원이 오브를 감싸는 얇은 테두리 정도로만 보이게 한다.
-const HALO_SIZE_FLOOR_PX = 46;
-const HALO_SIZE_CEILING_PX = 220;
-
 interface AmbientOrbProps {
   id: AmbientSoundId;
   sound: AmbientSoundMeta;
@@ -108,12 +105,14 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
       const dx = event.clientX - center.x;
       const dy = event.clientY - center.y;
       const distVmin = pxToVmin(Math.hypot(dx, dy));
-      if (Math.abs(distVmin - haloRadiusVmin) > HALO_TOLERANCE_VMIN) return;
+      // 실제로 화면에 그려진(px 상하한으로 clamp된) 원 기준으로 판정 — 그렇지 않으면
+      // 볼륨이 높을 때 눈에 보이는 원보다 훨씬 바깥에서부터 조절이 시작돼버린다.
+      if (Math.abs(distVmin - haloVisualRadiusVmin(volume)) > HALO_TOLERANCE_VMIN) return;
       event.currentTarget.setPointerCapture(event.pointerId);
       setHaloState("grabbed");
       setHaloCursor(resizeCursorFromAngle(dx, dy));
     },
-    [haloRadiusVmin, wrapCenter]
+    [volume, wrapCenter]
   );
 
   const handleHaloPointerMove = useCallback(
@@ -130,11 +129,11 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
         setHaloCursor(resizeCursorFromAngle(dx, dy));
         return;
       }
-      const isOnEdge = Math.abs(distVmin - haloRadiusVmin) <= HALO_TOLERANCE_VMIN;
+      const isOnEdge = Math.abs(distVmin - haloVisualRadiusVmin(volume)) <= HALO_TOLERANCE_VMIN;
       setHaloState(isOnEdge ? "hint" : "idle");
       setHaloCursor(isOnEdge ? resizeCursorFromAngle(dx, dy) : null);
     },
-    [id, haloState, haloRadiusVmin, onVolumeChange, wrapCenter]
+    [id, haloState, volume, onVolumeChange, wrapCenter]
   );
 
   const handleHaloPointerUp = useCallback(

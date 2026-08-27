@@ -41,6 +41,24 @@ export function radiusVminFromVolume(volume: number): number {
   return HALO_MIN_VMIN + Math.min(1, Math.max(0, volume)) * (HALO_MAX_VMIN - HALO_MIN_VMIN);
 }
 
+// AmbientOrb.tsx가 바깥 원(halo)을 실제로 그릴 때 쓰는 px 상하한. 뷰포트가 충분히 크면
+// (예: 볼륨 100%일 때 반지름 15vmin은 데스크톱 화면 대부분에서 110px를 훌쩍 넘는다)
+// CSS의 clamp(46px, Nvmin, 220px)가 이 상한에 걸려 실제로 그려지는 원은 그보다 작아진다.
+export const HALO_SIZE_FLOOR_PX = 46;
+export const HALO_SIZE_CEILING_PX = 220;
+
+// 클릭/hover 판정(hit-test)에 쓸 "실제로 화면에 그려지는" 바깥 원의 반지름(vmin). 위
+// radiusVminFromVolume은 px 상하한을 모르는 순수 볼륨→반지름 공식이라, 그 값을 그대로
+// 판정에 쓰면 화면에 보이는 원보다 더 크거나(볼륨이 높을 때) 작은(볼륨이 거의 0일 때) 원에서부터
+// 커서/조절이 반응해버린다 — AmbientOrb.tsx의 haloSizeCss와 반드시 같은 px 상하한을 거쳐야 한다.
+// viewportMinPx()를 그때그때(호출 시점) 읽으므로, 창 크기가 바뀐 직후에도 항상 지금 실제로
+// 그려진 원 기준으로 판정된다.
+export function haloVisualRadiusVmin(volume: number): number {
+  const rawDiameterPx = vminToPx(radiusVminFromVolume(volume) * 2);
+  const clampedDiameterPx = Math.min(HALO_SIZE_CEILING_PX, Math.max(HALO_SIZE_FLOOR_PX, rawDiameterPx));
+  return pxToVmin(clampedDiameterPx) / 2;
+}
+
 // 바깥 원(halo) 가장자리 위, 중심 기준 (dx, dy) 지점에 커서를 올렸을 때 보여줄 리사이즈
 // 커서. 그 지점에서 원 반지름을 늘리거나 줄이는 드래그 방향(=중심에서 그 지점을 잇는
 // 반지름 방향)과 시각적으로 일치하는 커서를 8방향(45도 간격)으로 골라 보여준다 —

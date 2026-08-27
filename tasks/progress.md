@@ -196,4 +196,17 @@
   - `SettingsDrawer.tsx`의 `FONT_FAMILY_OPTIONS` 배열 순서를 `[sans, serif]` → `[serif, sans]`로 변경(Settings 안 폰트 선택 UI 노출 순서가 이 배열 순서를 그대로 따름).
   - `useFontSettings.ts`의 `DEFAULT_FONT_FAMILY`를 `"sans"` → `"serif"`로 변경 — Settings의 "Reset" 버튼도 같은 상수를 참조해서 자동으로 명조로 리셋되도록 통일됨(별도 처리 불필요).
 - **검증**: `npm run typecheck` 통과. 프로덕션 빌드로 Playwright 실측 — 로딩 화면 배경색이 `rgb(0,0,0)`(순수 블랙)인 것 확인, 최초 진입 시 문장 텍스트의 `font-family`가 Noto Serif KR로 렌더링되는 것 확인, Settings 드로어의 폰트 옵션이 "Serif (명조)"가 먼저 뜨는 것 확인. 스크린샷으로 전체적인 화면 톤(블랙 계열)과 명조체 적용도 육안 확인. 콘솔 에러 없음.
+- **배포**: `git push origin main`(`4beeaa5`) 후 `vercel --prod` 배포, `musicpilsa.vercel.app` 200 확인.
+
+## 2026-08-27 — 배경음 오브 볼륨 히트존 버그 수정 + 영상/음악 자동재생 조사
+
+- **사용자 요청 1**: 배경음 오브 볼륨이 100%일 때 실제로 보이는 바깥 원(halo)보다 더 큰(바깥의) 지점에서부터 볼륨 조절이 시작되는 문제.
+  - **원인**: `radiusVminFromVolume(volume)`(볼륨→반지름 vmin 공식)는 px 상하한을 모르는 순수 계산인데, 실제 화면에 그려지는 바깥 원은 `AmbientOrb.tsx`에서 `clamp(46px, Nvmin, 220px)`로 px 상한이 걸려 있었음. 볼륨이 높고(특히 100%) 창이 충분히 크면(대략 뷰포트 짧은 변 733px 이상 — 데스크톱 대부분) 계산상의 반지름(예: 뷰포트 900px 기준 135px)이 CSS 상한(110px)보다 커져서, 클릭/hover 판정(hit-test)은 여전히 135px 지점을 기준으로 동작하고 있었지만 눈에 보이는 원은 110px에서 잘려 있었던 것 — 그 차이만큼 "보이지 않는 원"에서부터 조절이 시작되는 것처럼 느껴졌음.
+  - **수정**: `ambient-orb-geometry.ts`에 `haloVisualRadiusVmin(volume)` 추가 — 볼륨→반지름을 px로 환산한 뒤 AmbientOrb.tsx의 렌더링과 동일한 px 상하한(`HALO_SIZE_FLOOR_PX`/`HALO_SIZE_CEILING_PX`, 이번에 이 파일로 이동해 단일 소스로 통일)으로 클램프하고 다시 vmin으로 되돌리는 함수. `AmbientOrb.tsx`의 히트테스트(`handleHaloPointerDown`/`handleHaloPointerMove`)가 기존의 순수 vmin 반지름 대신 이 함수를 호출하도록 변경 — 시각적 크기 계산(halo CSS)은 건드리지 않고 클릭 판정만 실제 렌더 크기에 맞춤.
+  - **검증**: Playwright로 실측 — localStorage에 볼륨 100%짜리 사운드를 미리 심어두고, 실제 렌더된 바깥 원의 반지름(`getBoundingClientRect`)과 옛 버그의 히트존 중심(순수 vmin 계산값)을 각각 계산해 포인터를 이동시켜본 결과: 실제 보이는 원 가장자리(111.8px)에서는 커서가 정확히 반응(`ew-resize`)하고, 옛 버그 지점(135px)에서는 더 이상 반응하지 않음(빈 커서) 확인.
+- **사용자 요청 2**: 사이트 진입 시 영상/음악이 타이핑 없이 바로 재생되도록.
+  - **조사 결과**: 새 브라우저 컨텍스트(로컬 스토리지·방문 이력 전혀 없는, 진짜 첫 방문자와 동일한 조건)로 Playwright 실측한 결과, **영상은 이미 어떤 상호작용도 없이 자동재생되고 있음**(5초+ 경과 후에도 `paused: false`, `currentTime` 계속 증가) — 코드 수정 불필요.
+  - **음악(배경음악)**은 브라우저의 자동재생 정책상 사용자의 첫 제스처(클릭/키 입력 등) 없이는 어떤 코드로도 재생을 보장할 수 없음(이 사이트만의 제약이 아니라 모든 브라우저의 공통 규칙). 현재 구현(화면 아무 곳이나 클릭하거나 키를 한 번만 눌러도 즉시 재생, `HealingTypingScreen.tsx`의 전역 `pointerdown`/`keydown` 리스너)이 이 제약 안에서 가능한 최선 — 별도 수정 없음.
+  - 사용자가 "배경효과음은 지 혼자 재생되던데?"라고 지적한 부분은, `useAmbientSounds.ts`가 localStorage에 복원된 사운드를 게이트 없이 즉시 `audio.play()` 시도하기 때문(94번째 줄 근처) — 정상적인 첫 방문자라면 이것도 막혀야 하지만, hwasun님 브라우저는 이 사이트를 여러 번 테스트하며 방문한 이력이 쌓여 크롬의 Media Engagement Index가 높아진 상태라 자동재생이 예외적으로 허용된 것으로 추정(개인 브라우저에만 주어지는 신뢰도 특전이지, 코드가 제약을 우회한 게 아님). 시크릿 창이나 실제 첫 방문자 기준으로는 동일하게 막힘.
+- **검증**: `npm run typecheck` 통과, 프로덕션 빌드로 위 Playwright 실측 전부 확인. 콘솔 에러 없음.
 - **배포**: 커밋 예정, `git push origin main` 후 `vercel --prod` 배포.
