@@ -224,4 +224,15 @@
   - **수정**: `SiteTitleBar.tsx` — 텍스트 투명도 `text-white/60` → `text-white/85`(hover 시 `hover:text-white`로 완전 불투명), 위치 `fixed ... top-8`(32px) → `top-20`(80px)로 내려서 화면 최상단 가장자리에 덜 붙어 보이도록 조정.
   - **검증**: Playwright로 실측 — 타이틀 버튼의 실제 `color`가 `rgba(255, 255, 255, 0.85)`, `top`이 80px인 것 확인.
 - **검증**: `npm run typecheck` 통과, 프로덕션 빌드로 위 Playwright 실측 전부 확인. 콘솔 에러 없음.
+- **배포**: `git push origin main`(`1936e5e`) 후 `vercel --prod` 배포, `musicpilsa.vercel.app` 200 확인.
+
+## 2026-08-27 — 타이틀 재조정 + 배경음 볼륨 조절 구간 균일화
+
+- **사용자 요청 1**: "타이틀 조금 더 진하게, 조금 더 아래로" — 직전 조정(투명도 0.6→0.85, top-8→top-20)으로도 부족하다는 추가 피드백.
+  - `SiteTitleBar.tsx`: 투명도 `text-white/85` → `text-white`(완전 불투명, hover 시엔 반대로 `/80`으로 살짝 옅어지게 해서 "편집 가능" 어포던스는 유지), 위치 `top-20`(80px) → `top-28`(112px).
+- **사용자 요청 2**: "효과음 볼륨 조절 시에 0~50%보다 50~100%가 너무 좁게 느껴지는데 간격 균일하게 조정."
+  - **원인**: 바깥 원(halo)의 볼륨→반지름 공식(`radiusVminFromVolume`)은 순수 vmin 선형 공식인데, 실제 렌더링은 `AmbientOrb.tsx`의 `clamp(46px, Nvmin, 220px)`로 px 상한이 걸려 있음. 데스크톱 대부분의 화면(뷰포트 짧은 변 733px 이상)에서는 이 순수 공식이 볼륨 약 76% 지점에서 이미 px 상한(220px)에 도달해버려서, **볼륨 76~100% 구간은 아무리 드래그해도 원 크기가 전혀 안 변하는 "먹통 구간"**이었음. 지난 회차에 히트테스트(클릭 판정 시작 지점)만 이 상한을 반영하도록 고쳤을 뿐, 정작 "드래그 중 포인터 거리→볼륨값" 변환은 여전히 순수 vmin 공식(`volumeFromRadiusVmin`)을 쓰고 있어서, 이 사이의 간극(사용자 입장에서는 원이 안 커지는데 계속 드래그해야 100%에 도달하는 구간)이 "50~100%가 유독 좁다"는 체감으로 이어진 것.
+  - **수정**: `ambient-orb-geometry.ts` — `haloVisualRadiusVmin(0)`과 `haloVisualRadiusVmin(1)`로 "지금 이 화면에서 바깥 원이 실제로 그려질 수 있는 최소~최대 반지름"(px 상한까지 반영)을 구하는 `haloBoundsVmin()`을 추가하고, 그 두 값 사이를 볼륨 0~100%에 다시 선형으로 매핑하는 `haloDisplayRadiusVmin(volume)`/`volumeFromHaloRadiusVmin(radiusVmin)`을 새로 만듦. `AmbientOrb.tsx`의 렌더링 크기 계산·히트테스트·드래그 중 볼륨 계산을 전부 이 새 함수로 통일(기존의 순수 vmin 공식 `volumeFromRadiusVmin`은 더 이상 쓰는 곳이 없어져 삭제).
+  - **검증**: Playwright로 볼륨 0/25/50/75/100%짜리 사운드 5개를 동시에 띄우고 실제 렌더된 halo 반지름을 측정 — **29.34 / 50.31 / 70.6 / 91.43 / 112.08px, 25%씩 늘어날 때마다 약 20.3~21.0px씩 균일하게 증가**(수정 전이었다면 75→100% 구간 델타가 거의 0에 가까웠을 것). 스크린샷으로 5개 원이 계단식으로 고르게 커지는 것 육안 확인. 콘솔 에러 없음.
+- **검증**: `npm run typecheck` 통과, 프로덕션 빌드로 위 Playwright 실측 전부 확인.
 - **배포**: 커밋 예정, `git push origin main` 후 `vercel --prod` 배포.

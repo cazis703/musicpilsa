@@ -3,19 +3,16 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { CloseIcon } from "@/components/ui/icons";
 import {
-  HALO_MAX_VMIN,
-  HALO_MIN_VMIN,
   HALO_SIZE_CEILING_PX,
   HALO_SIZE_FLOOR_PX,
   HALO_TOLERANCE_VMIN,
   ORB_SIZE_CEILING_PX,
   ORB_SIZE_FLOOR_PX,
   ORB_SIZE_VMIN,
-  haloVisualRadiusVmin,
+  haloDisplayRadiusVmin,
   pxToVmin,
-  radiusVminFromVolume,
   resizeCursorFromAngle,
-  volumeFromRadiusVmin,
+  volumeFromHaloRadiusVmin,
 } from "@/lib/ambient-orb-geometry";
 import type { AmbientSoundId, AmbientSoundMeta } from "@/types/ambientSound";
 
@@ -58,7 +55,7 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
     const seed = id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return { bobDelaySec: (seed % 40) / 10, bobDurationSec: 7 + (seed % 5) };
   }, [id]);
-  const haloRadiusVmin = radiusVminFromVolume(volume);
+  const haloRadiusVmin = haloDisplayRadiusVmin(volume);
   const haloDiameterVmin = haloRadiusVmin * 2;
   const haloSizeCss = `clamp(${HALO_SIZE_FLOOR_PX}px, ${haloDiameterVmin}vmin, ${HALO_SIZE_CEILING_PX}px)`;
 
@@ -111,9 +108,9 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
       const dx = event.clientX - center.x;
       const dy = event.clientY - center.y;
       const distVmin = pxToVmin(Math.hypot(dx, dy));
-      // 실제로 화면에 그려진(px 상하한으로 clamp된) 원 기준으로 판정 — 그렇지 않으면
+      // 실제로 화면에 그려진(px 상하한까지 반영한) 원 기준으로 판정 — 그렇지 않으면
       // 볼륨이 높을 때 눈에 보이는 원보다 훨씬 바깥에서부터 조절이 시작돼버린다.
-      if (Math.abs(distVmin - haloVisualRadiusVmin(volume)) > HALO_TOLERANCE_VMIN) return;
+      if (Math.abs(distVmin - haloDisplayRadiusVmin(volume)) > HALO_TOLERANCE_VMIN) return;
       event.currentTarget.setPointerCapture(event.pointerId);
       setHaloState("grabbed");
       setHaloCursor(resizeCursorFromAngle(dx, dy));
@@ -130,12 +127,15 @@ function AmbientOrb({ id, sound, x, y, volume, onPositionChange, onVolumeChange,
       const distVmin = pxToVmin(Math.hypot(dx, dy));
 
       if (haloState === "grabbed") {
-        const clampedRadiusVmin = Math.min(HALO_MAX_VMIN, Math.max(HALO_MIN_VMIN, distVmin));
-        onVolumeChange(id, volumeFromRadiusVmin(clampedRadiusVmin));
+        // "실제로 그려질 수 있는 최소~최대 반지름" 사이를 선형으로 매핑 — 화면에 보이는
+        // 원 크기가 늘어나는 만큼 볼륨도 항상 균일한 비율로 늘어난다(순수 vmin 공식을 쓰면
+        // 큰 화면에서 볼륨 상위 구간이 원 크기 변화 없이 눌려버려 그 구간만 유독 좁게
+        // 느껴지는 문제가 있었다).
+        onVolumeChange(id, volumeFromHaloRadiusVmin(distVmin));
         setHaloCursor(resizeCursorFromAngle(dx, dy));
         return;
       }
-      const isOnEdge = Math.abs(distVmin - haloVisualRadiusVmin(volume)) <= HALO_TOLERANCE_VMIN;
+      const isOnEdge = Math.abs(distVmin - haloDisplayRadiusVmin(volume)) <= HALO_TOLERANCE_VMIN;
       setHaloState(isOnEdge ? "hint" : "idle");
       setHaloCursor(isOnEdge ? resizeCursorFromAngle(dx, dy) : null);
     },

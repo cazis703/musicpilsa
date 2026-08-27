@@ -78,13 +78,13 @@ export default function SiteTitleBar({
   };
 
   return (
-    <div ref={containerRef} className="fixed left-1/2 top-20 z-40 -translate-x-1/2">
+    <div ref={containerRef} className="fixed left-1/2 top-28 z-40 -translate-x-1/2">
       <div className="group flex items-center gap-2">
         <button
           type="button"
           onClick={() => setIsEditing((prev) => !prev)}
           aria-label="사이트 제목 편집"
-          className="rounded px-1 text-base text-white/85 transition-colors hover:text-white sm:text-lg"
+          className="rounded px-1 text-base text-white transition-colors hover:text-white/80 sm:text-lg"
           style={{ fontFamily: titleFontFamily }}
         >
           {buildTitle(recipientName, setLabel)}

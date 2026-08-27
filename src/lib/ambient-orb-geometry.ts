@@ -33,10 +33,6 @@ export function pxToVmin(px: number): number {
   return base === 0 ? 0 : (px / base) * 100;
 }
 
-export function volumeFromRadiusVmin(radiusVmin: number): number {
-  return Math.min(1, Math.max(0, (radiusVmin - HALO_MIN_VMIN) / (HALO_MAX_VMIN - HALO_MIN_VMIN)));
-}
-
 export function radiusVminFromVolume(volume: number): number {
   return HALO_MIN_VMIN + Math.min(1, Math.max(0, volume)) * (HALO_MAX_VMIN - HALO_MIN_VMIN);
 }
@@ -57,6 +53,33 @@ export function haloVisualRadiusVmin(volume: number): number {
   const rawDiameterPx = vminToPx(radiusVminFromVolume(volume) * 2);
   const clampedDiameterPx = Math.min(HALO_SIZE_CEILING_PX, Math.max(HALO_SIZE_FLOOR_PX, rawDiameterPx));
   return pxToVmin(clampedDiameterPx) / 2;
+}
+
+// 위 haloVisualRadiusVmin(0)/haloVisualRadiusVmin(1) — 즉 "지금 이 뷰포트에서 바깥 원이
+// 실제로 표시될 수 있는 최소/최대 반지름"(px 상하한 반영, vmin 단위). 큰 화면에서는
+// 최대치가 HALO_SIZE_CEILING_PX에 눌려서 HALO_MAX_VMIN(15vmin)보다 훨씬 작아진다(예:
+// 뷰포트 짧은 변 900px 기준 15vmin=135px인데 실제로는 110px까지만 그려짐).
+function haloBoundsVmin(): { minVmin: number; maxVmin: number } {
+  return { minVmin: haloVisualRadiusVmin(0), maxVmin: haloVisualRadiusVmin(1) };
+}
+
+// 볼륨→반지름을 "실제로 화면에 그려질 수 있는 범위" 안에서 선형으로 매핑한다. 순수 공식인
+// radiusVminFromVolume을 그대로 렌더링/드래그 계산에 쓰면, 큰 화면에서는 원이 상한에 일찍
+// 도달해버려서 볼륨 상위 구간(대략 76~100%)은 드래그해도 원 크기가 전혀 안 바뀌는 "먹통
+// 구간"이 된다 — 사용자에게는 그 구간(체감상 대략 50~100%)이 유독 좁게 느껴지는 원인이었다.
+// haloBoundsVmin으로 구한 실제 최소~최대 반지름 사이를 다시 선형으로 매핑하면, 원 크기와
+// 볼륨이 0~100% 전 구간에서 항상 1:1로 대응해서 드래그 간격이 균일해진다.
+export function haloDisplayRadiusVmin(volume: number): number {
+  const { minVmin, maxVmin } = haloBoundsVmin();
+  return minVmin + Math.min(1, Math.max(0, volume)) * (maxVmin - minVmin);
+}
+
+// haloDisplayRadiusVmin의 역함수 — 드래그 중 포인터 위치로부터 계산한 반지름(vmin)을
+// 볼륨으로 되돌린다.
+export function volumeFromHaloRadiusVmin(radiusVmin: number): number {
+  const { minVmin, maxVmin } = haloBoundsVmin();
+  if (maxVmin <= minVmin) return 0;
+  return Math.min(1, Math.max(0, (radiusVmin - minVmin) / (maxVmin - minVmin)));
 }
 
 // 바깥 원(halo) 가장자리 위, 중심 기준 (dx, dy) 지점에 커서를 올렸을 때 보여줄 리사이즈
