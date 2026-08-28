@@ -55,10 +55,15 @@ const TypingChar = forwardRef<HTMLSpanElement, TypingCharProps>(function TypingC
   // 오타 구간: 목표 글자 대신 실제로 입력한 글자를 빨간색으로 보여준다. 글로우/정착
   // 애니메이션 클래스는 적용하지 않는다 — 오타 상태에서는 애니메이션 자체가 멈춰야 하기 때문
   // (전체 정지는 useCharEffects가 담당하고, 여기서는 오타 글자를 항상 정적으로만 표시한다).
+  //
+  // 다만 실제로 입력한 글자가 스페이스(공백)면 그대로 보여줄 경우 화면에 빈칸만 남아
+  // 그 자리 글자가 통째로 지워진 것처럼 보인다 — 이 경우엔 목표 글자를 그대로(빨간색으로)
+  // 보여줘서 "글자는 남아있고 오타로만 표시"되게 한다.
   if (isTypo) {
+    const displayChar = typedChar && typedChar.trim().length > 0 ? typedChar : char;
     return (
       <span ref={setRefs} className="inline-block whitespace-pre text-red-400">
-        {typedChar ?? char}
+        {displayChar}
       </span>
     );
   }

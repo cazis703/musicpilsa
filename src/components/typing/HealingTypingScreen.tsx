@@ -62,11 +62,20 @@ export default function HealingTypingScreen() {
     setActiveSet,
     skipSentence,
   } = useSentenceTyping(tone, playTypingSound);
-  const { videoStatus, audioStatus, videoRef, audioRef, videoSrc, audioSrc, nextVideo, nextAudio, previousAudio } =
-    useBackgroundMedia();
+  const {
+    videoStatus,
+    audioStatus,
+    videoRef,
+    audioRef,
+    videoSrc,
+    audioSrc,
+    nextVideo,
+    nextAudio,
+    previousAudio,
+    selectAudio,
+  } = useBackgroundMedia();
   const { isMuted, volume, isPlaying, toggleMute, setVolume, togglePlay } = useAudioControls(audioRef);
   const {
-    activeIds: ambientActiveIds,
     positions: ambientPositions,
     toggleSound: toggleAmbientSound,
     setPosition: setAmbientPosition,
@@ -164,6 +173,14 @@ export default function HealingTypingScreen() {
     playClickSound();
     previousAudio();
   }, [playClickSound, previousAudio]);
+
+  const handleSelectAudio = useCallback(
+    (path: string) => {
+      playClickSound();
+      selectAudio(path);
+    },
+    [playClickSound, selectAudio]
+  );
 
   const handleSkip = useCallback(() => {
     playClickSound();
@@ -427,6 +444,7 @@ export default function HealingTypingScreen() {
         onNextVideo={handleNextVideo}
         onNextAudio={handleNextAudio}
         onPreviousAudio={handlePreviousAudio}
+        onSelectAudio={handleSelectAudio}
         isMuted={isMuted}
         volume={volume}
         isPlaying={isPlaying}
@@ -439,6 +457,9 @@ export default function HealingTypingScreen() {
         onToggleSfxMute={toggleSfxMute}
         keySwitchType={keySwitchType}
         onKeySwitchTypeChange={setKeySwitchType}
+        ambientPositions={ambientPositions}
+        onToggleAmbientSound={handleToggleAmbientSound}
+        onAmbientVolumeChange={setAmbientVolume}
         onOpenSettings={handleOpenSettings}
         isRevealed={isAppReady}
         revealDelayMs={650}
@@ -483,8 +504,9 @@ export default function HealingTypingScreen() {
         onResetFontWeight={handleResetFontWeight}
         fontFamily={fontFamily}
         onSelectFontFamily={handleSelectFontFamily}
-        ambientActiveIds={ambientActiveIds}
+        ambientPositions={ambientPositions}
         onToggleAmbientSound={handleToggleAmbientSound}
+        onAmbientVolumeChange={setAmbientVolume}
       />
       </div>
     </main>

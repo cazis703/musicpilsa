@@ -1,6 +1,60 @@
 # 작업 기록 (append-only)
 
-## 2026-08-26 — 배경 영상 끊김 개선 + 배경음 오브 볼륨 조절 UX 개선 (배포 완료)
+## 2026-08-28 — 타이핑음 볼륨 위치 이동 + 배경음 설정 바깥으로 노출
+
+- **타이핑음 볼륨 혼동 개선**: 하단 바에 음표 아이콘 + 볼륨 슬라이더가 음악 슬라이더와 나란히 있어 "이게 뭐의 볼륨인지" 헷갈린다는 피드백 반영.
+  - `SfxTypeDropdown.tsx`: `volume`/`onVolumeChange`/`isMuted`/`onToggleMute` optional prop 추가 — 넘기면 드롭다운을 펼쳤을 때 안쪽 상단에 음소거 버튼+볼륨 슬라이더가 뜬다. 안 넘기면(Settings 패널 쪽) 기존과 동일.
+  - `AudioController.tsx`: 하단 바의 독립된 음표+슬라이더 블록 제거, 타건음 스위치 드롭다운에 볼륨을 실어 보냄. 이제 하단 바엔 음악 슬라이더 하나만 상시 노출.
+- **배경음 설정을 바깥으로 노출**: 기존엔 Settings 패널 안에서만 켜고 끌 수 있었음.
+  - `AmbientSoundPicker.tsx`(신규, 공용): 배경음 목록 — 켜짐/꺼짐은 아이콘·라벨 클릭, 켜진 소리는 스위치 대신 우측에 볼륨 슬라이더가 뜨는 형태. Settings 패널과 하단 바 팝업이 이 컴포넌트를 공유.
+  - `AmbientSoundControl.tsx`(신규): 하단 바 트리거. 켜진 배경음이 없으면 "배경음" 텍스트, 있으면 아이콘 최대 3개가 겹쳐 쌓이고 "N개 적용 중" 텍스트가 붙는다. 클릭하면 `AmbientSoundPicker` 팝업.
+  - `SettingsDrawer.tsx`의 기존 스위치 목록을 `AmbientSoundPicker`로 교체(동일 UI로 통일).
+- **확인**: Playwright(`npx playwright@1.62.1`, 프로젝트 의존성엔 추가 안 함)로 dev 서버를 직접 띄워 하단 바/설정 패널 양쪽에서 실제 클릭·드래그로 동작 확인, 콘솔 에러 없음. `tsc --noEmit` 통과.
+
+### 같은 날 후속 피드백 3건 반영
+- **배경음 목록 클릭 영역 확대**: `AmbientSoundPicker.tsx` — 아이콘/라벨이 각각 별도 버튼이라 그 사이 여백을 누르면 반응이 없던 문제. 아이콘+라벨을 하나의 버튼(`flex-1`)으로 묶어 슬라이더를 제외한 영역 전체가 클릭 가능하도록 수정.
+- **타이핑음 아이콘 통일**: `SfxTypeDropdown.tsx`, `SettingsDrawer.tsx` — 타건음(효과음) 볼륨의 음소거 아이콘을 음표(Note) → 스피커(Speaker) 아이콘으로 통일. 음악 볼륨 아이콘과 같은 스피커 아이콘을 재사용.
+- **배경음악 플레이어 그룹핑 + 재생목록**: `AudioController.tsx` — NowPlaying/이전·재생·다음/음량 슬라이더를 옅은 배경(`bg-white/5` pill)으로 한 번 더 감싸 하나의 "플레이어" 덩어리로 보이게 함(기존 각 요소 스타일은 그대로 유지). `MusicPlaylistDropdown.tsx`(신규) — NowPlaying을 누르면 전체 곡 목록(제목+아티스트)이 펼쳐지고 바로 골라 재생 가능. `useBackgroundMedia.ts`에 `selectAudio(path)` 추가(순환 이동이 아닌 임의 선택).
+- **확인**: 위와 동일하게 Playwright로 재생목록 열기/곡 선택/타이핑음 드롭다운/배경음 넓은 클릭 영역까지 직접 클릭해서 확인, 콘솔 에러 없음. `tsc --noEmit` 통과.
+
+### 같은 날 마이크로 다듬기
+- 재생목록 펼침 목록의 브라우저 기본(흰색) 스크롤바를 `.settings-scroll`(기존 Settings 패널과 동일)로 숨김 — 스크롤 자체는 유지.
+- 재생목록/배경음/타이핑음 세 드롭다운 각각 펼쳤을 때 상단에 작은 타이틀 텍스트 추가(`재생목록`/`배경음`/`타이핑음`) — `SfxTypeDropdown`은 기존 `tooltip` prop 문자열을 그대로 재사용.
+- 하단 바 설정(톱니바퀴) 아이콘에 다른 드롭다운들과 동일한 스타일의 hover 툴팁("Settings") 추가.
+- 재생목록/배경음/타이핑음 세 드롭다운 펼침에 짧은 페이드인(160ms, opacity+살짝 translateY/scale, GPU 합성이라 성능 영향 미미) 추가 — `tailwind.config.ts`에 `dropdown-fade-in`(비중앙정렬용)/`dropdown-fade-in-x`(중앙정렬용) keyframe 2종 신설.
+- `SettingsDrawer.tsx`: "타이핑음" 한 섹션으로 묶여있던 볼륨+스위치 종류를 "타이핑 볼륨"/"타이핑음 선택" 두 섹션으로 분리하고, 순서도 하단 바와 동일하게 볼륨이 먼저 나오도록 변경.
+
+### 페이드인 버그 수정 (2026-08-28)
+- 처음 구현한 `useDropdownTransition` 훅(rAF 한 번 + 조건부 마운트/언마운트) 방식은 실제로는 트랜지션이 재생되지 않는 버그가 있었음 — React 렌더와 rAF 타이밍이 겹쳐 브라우저가 "닫힌 상태"를 한 번도 그리지 못한 채 바로 최종 상태로 그려버림(mount와 첫 rAF가 같은 프레임에 묶임). `transitionrun`/`transitionend` 이벤트를 직접 계측해 확인.
+- **해결**: 조건부 마운트/언마운트를 그만두고, 패널을 항상 DOM에 둔 채 `isOpen` 값에 따라 opacity/transform 클래스만 토글하는 방식으로 변경(`MusicPlaylistDropdown`, `AmbientSoundControl`, `SfxTypeDropdown` 3곳 모두). 이 방식은 최초 페인트부터 "닫힌 상태"가 실제로 그려져 있으므로 rAF 트릭이 필요 없고, 열고 닫을 때 모두 안정적으로 트랜지션이 재생됨(재계측으로 확인 완료). `useDropdownTransition.ts` 훅은 삭제.
+- 닫혀있을 때는 `pointer-events-none` + `aria-hidden`/`tabIndex=-1`로 클릭·키보드 포커스를 막아 안 보이는 패널이 인터랙션을 가로채지 않게 함.
+
+### "지금 재생 중" 마이크로 인터랙션 적용 (2026-08-28)
+- Artifact로 이퀄라이저 바(A)/펄스 링(B)/스피닝 디스크(C)/텍스트 브리딩 글로우(D)/디스크+파장 합성(E) 5개 후보를 실제 재생목록 드롭다운과 같은 룩으로 만들어 사용자와 함께 비교·확정. 최종 선택: **재생목록 안 활성곡 = A(이퀄라이저 바)**, **하단 바 NowPlaying = B(펄스 링)**.
+- `PlayingEqualizer.tsx`(신규): 막대 3개, 서로 다른 음수 `animation-delay`로 어긋난 박자, `isPlaying=false`면 애니메이션을 멈추고 낮은 높이에 얼어붙음. `MusicPlaylistDropdown.tsx`의 활성 트랙 행에 고정폭 슬롯으로 삽입(비활성 트랙과 텍스트 위치가 안 밀리도록).
+- `PlayingPulse.tsx`(신규): Tailwind 내장 `animate-ping`로 파장 표현, `isPlaying=false`면 파장 없이 점만 남음. `NowPlaying.tsx`의 기존 회전 디스크(`DiscIcon` + `animate-spin-slow`)를 대체 — 동심원은 완전 대칭이라 회전이 거의 안 보였던 문제도 같이 해결됨.
+- `isPlaying`을 `AudioController` → `MusicPlaylistDropdown` → `NowPlaying`/`PlayingEqualizer`까지 새로 threading. 이제 안 쓰는 `DiscIcon`(icons.tsx)과 `spin-slow`(tailwind.config.ts) 제거.
+- 확인: Playwright로 재생/일시정지 토글하며 `.animate-ping`/`.animate-eq-bounce` 클래스가 재생 중엔 있고 멈추면 사라지는지 직접 계측, 콘솔 에러 없음. `tsc --noEmit` 통과.
+
+### 후속 수정 — 파장은 원복, 이퀄라이저는 정지 버그 수정
+- 사용자가 실제로 보니 이퀄라이저 바가 멈춰있고 파장도 데모와 다르다고 피드백. 원인 재확인: 새로 추가한 `eq-bounce` 커스텀 keyframe이 (이전 `orb-enter` 사고와 동일하게) tailwind.config.ts 변경 후 dev 서버가 재시작 없이는 컴파일된 CSS에 전혀 반영되지 않는 상태였음(`layout.css`에서 `eq-bounce` 0건 확인, 클린 재시작 후 3건으로 확인) — 클래스는 DOM에 있지만 대응하는 keyframe 규칙 자체가 없어 완전히 정지 상태였던 것.
+- **파장(B) 관련**: 사용자가 "그냥 원래대로 돌아가는 CD로 하자"고 결정 — `NowPlaying.tsx`를 `DiscIcon` + `animate-spin-slow`로 원복, `PlayingPulse.tsx` 삭제, `tailwind.config.ts`의 `spin-slow`/`DiscIcon`(icons.tsx)도 원복. 재생목록의 이퀄라이저(A)는 그대로 유지.
+- **이퀄라이저(A) 관련**: 클린 재시작(`rm -rf .next` + 재기동)으로 해결 — 이후 Playwright로 실제 `scaleY` computed transform 값이 여러 샘플에 걸쳐 진짜로 변하는지(0.31~1.0 사이) 확인 완료.
+- **교훈 갱신**: `tailwind.config.ts`에 새 keyframe/animation을 추가한 뒤에는 클래스가 DOM에 있는지만 보지 말고, 컴파일된 CSS 응답에서 그 keyframe 이름이 실제로 존재하는지 curl로 직접 확인하고, 없으면 반드시 클린 재시작할 것 — `feedback_debug-visual-bugs-empirically` 메모리에 반영.
+
+### 이퀄라이저 속도 조정 + 스페이스 오타 시 글자 사라짐 버그 수정
+- 이퀄라이저 주기를 0.9s → 1.5s로 늦춤(`tailwind.config.ts`의 `eq-bounce` animation, `PlayingEqualizer.tsx`의 delay도 비율 유지해 -1.0s/-0.5s/-1.5s로 조정). 컴파일된 CSS에 1.5s로 반영된 것까지 확인.
+- **버그**: 아무 것도 안 치고 스페이스바만 누르면 문장의 그 글자가 화면에서 사라지는 것처럼 보이는 문제. 원인: `TypingChar.tsx`의 오타 렌더링이 "실제로 입력한 글자"(`typedChar`)를 목표 글자 대신 그대로 보여주는데, 입력한 게 스페이스면 그 글자 자리가 눈에 보이는 공백(사실상 빈칸)이 되어버림 — 다른 오타 글자(글자가 눈에 보이는 경우)에서는 문제없던 로직이 스페이스에서만 "글자가 지워진 것처럼" 보이는 부작용을 냄.
+- **수정**: `typedChar`가 공백/빈 문자열이면 그 자리에 실제 입력값 대신 원래 목표 글자를 그대로(빨간색 오타 스타일 유지) 보여주도록 fallback 추가. Playwright로 "오"(첫 글자)가 스페이스 입력 후에도 그대로 보이면서 색만 빨간색으로 바뀌는 것 확인.
+
+### 훨씬 심각한 실제 버그 발견 — "정상 입력도 오타로 표시"
+- 사용자가 "정상입력도 오타로 체크하고있어"라고 재보고. Playwright로 목표 문장을 정확히 그대로 타이핑해도 여러 글자가 오타(빨간색)로 표시되는 걸 재현.
+- **1차 오진**: 처음엔 `useCharEffects.ts`의 화면 표시 병합 로직이 원인이라 생각했음 — `previous.char === source.char`만으로 "같은 자리"를 판단해서, 문장이 바뀌었는데 우연히 같은 자리에 같은 글자(공백, 흔한 조사 등)가 있으면 그 자리를 "안 바뀐 자리"로 오인하는 버그가 실제로 있었고 고쳤음(`sentenceKey`로 문장이 진짜 바뀌었는지 명시적으로 판단하도록 변경). 하지만 고친 뒤에도 증상이 남아있어 재조사.
+- **진짜 원인**: `useSentenceTyping.ts`의 "톤이 바뀌면 charStates를 다시 만든다" 이펙트가 `isFirstToneRenderRef`라는 1회성 ref 플래그로 "마운트 시 최초 1회는 건너뛴다"를 구현하고 있었는데, **React StrictMode(개발 모드)가 마운트 이펙트를 두 번 연속 실행**하면서: 1차 호출 때 플래그를 이미 `false`로 바꿔버려서, 2차 호출이 "진짜 톤 변경"으로 오인되어 실행됨 → 이때 클로저에 잡혀있던 **오래된(문장이 아직 랜덤으로 안 바뀌었을 때의) targetText**로 `charStates`를 덮어씀. 그 결과 화면(charStates 기반)엔 옛 문장이 남아있는데, 판정 기준인 `targetText`(currentSentence 기반, 같은 마운트 이펙트에서 이미 새 문장으로 갱신됨)는 다른 문장을 가리키게 되어, 화면에 보이는 대로 정확히 타이핑해도 전부 오타로 판정됨.
+- **디버깅 방법**: 화면 스크린샷/DOM 클래스 존재 여부만으로는 이 불일치를 못 잡음 — `SentenceTypingArea`의 렌더마다 `sentenceProp`(targetText)와 `charStatesJoined`(실제 표시되는 글자들)를 같이 로그로 찍어서야 "targetText는 문장 B로 바뀌었는데 charStates는 문장 A에 계속 고정돼 있다"는 정확한 불일치를 확인할 수 있었음.
+- **수정**: `isFirstToneRenderRef` 방식을 버리고, `previousToneRef`에 마지막으로 처리한 tone 값을 저장해 "이번 tone이 그 값과 실제로 다른가"로 판단하도록 변경 — 몇 번을 연달아 호출되든(StrictMode 포함) 안전함(같은 값이면 항상 스킵).
+- **확인**: Playwright로 전체 문장을 정확히 타이핑 → 오타 0개, 정상적으로 다음 문장 자동 전환까지 확인. 같은 exact-match 테스트를 4번 반복해도 항상 전부 정타로 표시됨. 스페이스 오타 수정도 여전히 정상 동작.
+- **교훈**: "마운트 시 한 번만 실행" 같은 가드를 `useRef` 플래그로 구현하는 패턴은 React StrictMode의 이펙트 이중 호출과 상극이다 — ref는 이중 호출 사이에도 리셋되지 않으므로, 두 번째 호출이 "진짜 이벤트"로 오인될 수 있다. "이전 값과 실제로 다른가"를 직접 비교하는 방식(previousXRef)이 몇 번 호출되든 안전하다.
 
 - **배경 영상 끊김(압축 외 원인) 개선**
   - `useParticleSystem.ts`: 타이핑 파티클 캔버스가 파티클이 하나도 없을 때도 매 프레임(60fps) 화면 전체를 지우고 다시 그리던 루프를 상시로 돌리고 있던 게 발견됨 — 배경 영상과 계속 자원을 나눠 쓰던 실질적 원인으로 추정. 활성 파티클이 없으면 루프를 완전히 멈추고 `spawnAt` 호출 시에만 재개하도록 수정.

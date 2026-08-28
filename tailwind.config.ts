@@ -60,6 +60,12 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translate(-50%, 14px)" },
           "100%": { opacity: "1", transform: "translate(-50%, 0)" },
         },
+        // 재생목록에서 지금 재생 중인 곡 옆에 붙는 이퀄라이저 바(PlayingEqualizer)용.
+        // 막대마다 다른 animation-delay(음수)를 줘서 셋이 어긋난 박자로 오르내리게 한다.
+        "eq-bounce": {
+          "0%, 100%": { transform: "scaleY(0.28)" },
+          "50%": { transform: "scaleY(1)" },
+        },
       },
       animation: {
         "glow-in": "glow-in 300ms ease-out",
@@ -69,6 +75,7 @@ const config: Config = {
         "orb-enter": "orb-enter 0.5s cubic-bezier(0.2,0.8,0.2,1) both",
         "fade-up-in": "fade-up-in 0.8s ease-out both",
         "fade-up-in-x": "fade-up-in-x 0.7s ease-out both",
+        "eq-bounce": "eq-bounce 1.5s ease-in-out infinite",
       },
     },
   },

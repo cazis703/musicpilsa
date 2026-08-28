@@ -51,7 +51,7 @@ export default function SentenceTypingArea({
   onBlur,
   onGlowStart,
 }: SentenceTypingAreaProps) {
-  const { visualCharStates } = useCharEffects(charStates);
+  const { visualCharStates } = useCharEffects(charStates, sentence);
   const containerRef = useRef<HTMLDivElement>(null);
   const charRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const [caretRect, setCaretRect] = useState<CaretRect | null>(null);

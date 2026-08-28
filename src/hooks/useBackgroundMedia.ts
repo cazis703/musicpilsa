@@ -115,6 +115,11 @@ export function useBackgroundMedia(): UseBackgroundMediaReturn {
     setAudioSrc((prev) => pickPreviousPath(AUDIO_PATHS, prev));
   }, []);
 
+  // 재생목록에서 특정 곡을 직접 골라 튼다(순환 이동이 아니라 임의 선택).
+  const selectAudio = useCallback((path: string) => {
+    setAudioSrc(path);
+  }, []);
+
   return {
     videoStatus,
     audioStatus,
@@ -125,5 +130,6 @@ export function useBackgroundMedia(): UseBackgroundMediaReturn {
     nextVideo,
     nextAudio,
     previousAudio,
+    selectAudio,
   };
 }

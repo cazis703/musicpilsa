@@ -10,4 +10,5 @@ export interface UseBackgroundMediaReturn {
   nextVideo: () => void;
   nextAudio: () => void;
   previousAudio: () => void;
+  selectAudio: (path: string) => void;
 }

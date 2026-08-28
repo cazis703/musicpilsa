@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { getSetIcon } from "@/components/typing/ThemeSwitcher";
+import AmbientSoundPicker from "@/components/audio/AmbientSoundPicker";
 import VolumeSlider from "@/components/audio/VolumeSlider";
 import SfxTypeDropdown from "@/components/audio/SfxTypeDropdown";
 import {
@@ -9,8 +10,6 @@ import {
   EyeIcon,
   EyeOffIcon,
   MinusIcon,
-  NoteIcon,
-  NoteMutedIcon,
   PlusIcon,
   RefreshIcon,
   SpeakerMutedIcon,
@@ -18,7 +17,6 @@ import {
   SwitchIcon,
 } from "@/components/ui/icons";
 import { KEY_SWITCH_OPTIONS, type KeySwitchType } from "@/data/keySwitches";
-import { AMBIENT_SOUNDS } from "@/data/ambientSounds";
 import { MAX_RECIPIENT_NAME_LENGTH } from "@/hooks/useSiteTitle";
 import {
   MAX_FONT_SIZE_REM,
@@ -28,7 +26,7 @@ import {
   type FontFamilyId,
 } from "@/hooks/useFontSettings";
 import type { SentenceSetId, SentenceSetMeta, SentenceTone } from "@/types/sentence";
-import type { AmbientSoundId } from "@/types/ambientSound";
+import type { AmbientSoundId, AmbientSoundPositions } from "@/types/ambientSound";
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -72,8 +70,9 @@ interface SettingsDrawerProps {
   fontFamily: FontFamilyId;
   onSelectFontFamily: (id: FontFamilyId) => void;
 
-  ambientActiveIds: AmbientSoundId[];
+  ambientPositions: AmbientSoundPositions;
   onToggleAmbientSound: (id: AmbientSoundId) => void;
+  onAmbientVolumeChange: (id: AmbientSoundId, volume: number) => void;
 }
 
 // "위로" Set은 청자가 "당신"이라 하다체로 바꾸면 반말처럼 들려 어색하므로, 하다체/습니다체
@@ -131,8 +130,9 @@ export default function SettingsDrawer({
   onResetFontWeight,
   fontFamily,
   onSelectFontFamily,
-  ambientActiveIds,
+  ambientPositions,
   onToggleAmbientSound,
+  onAmbientVolumeChange,
 }: SettingsDrawerProps) {
   useEffect(() => {
     if (!isOpen) return;
@@ -299,18 +299,10 @@ export default function SettingsDrawer({
                 </div>
               </section>
 
+              {/* 하단 바에서는 타이핑음 드롭다운을 펼치면 볼륨이 먼저 나오므로, 여기서도
+                  같은 순서(볼륨 → 스위치 종류)로 두고 라벨을 분리한다. */}
               <section>
-                <SectionHeading>타이핑음</SectionHeading>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs text-white/50">스위치 종류</span>
-                  <SfxTypeDropdown
-                    options={KEY_SWITCH_OPTIONS}
-                    value={keySwitchType}
-                    onChange={onKeySwitchTypeChange}
-                    ariaLabel="타건음 스위치 종류"
-                    tooltip="타이핑음"
-                  />
-                </div>
+                <SectionHeading>타이핑 볼륨</SectionHeading>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -319,13 +311,27 @@ export default function SettingsDrawer({
                     aria-pressed={isSfxMuted}
                     className="text-white/70 transition-colors hover:text-white"
                   >
-                    {isSfxMuted ? <NoteMutedIcon className="h-5 w-5" /> : <NoteIcon className="h-5 w-5" />}
+                    {isSfxMuted ? <SpeakerMutedIcon className="h-5 w-5" /> : <SpeakerOnIcon className="h-5 w-5" />}
                   </button>
                   <VolumeSlider
                     value={isSfxMuted ? 0 : sfxVolume}
                     onChange={onSfxVolumeChange}
                     ariaLabel="효과음 볼륨"
                     className="flex-1"
+                  />
+                </div>
+              </section>
+
+              <section>
+                <SectionHeading>타이핑음 선택</SectionHeading>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/50">스위치 종류</span>
+                  <SfxTypeDropdown
+                    options={KEY_SWITCH_OPTIONS}
+                    value={keySwitchType}
+                    onChange={onKeySwitchTypeChange}
+                    ariaLabel="타건음 스위치 종류"
+                    tooltip="타이핑음"
                   />
                 </div>
               </section>
@@ -431,56 +437,16 @@ export default function SettingsDrawer({
               </div>
             </section>
 
-            {/* 5. 배경음 추가·삭제 — 목록에서 켜면 화면에 오브가 뜨고, 끄면 사라진다 */}
+            {/* 5. 배경음 추가·삭제 — 목록에서 켜면 화면에 오브가 뜨고, 끄면 사라진다.
+                하단 바의 배경음 드롭다운과 동일한 목록(AmbientSoundPicker)을 그대로 써서,
+                켜진 소리마다 스위치 대신 우측에 볼륨 슬라이더가 바로 뜨는 형태를 공유한다. */}
             <section className="pt-5">
               <SectionHeading>배경음</SectionHeading>
-              <ul className="flex flex-col gap-0.5">
-                {AMBIENT_SOUNDS.map((sound) => {
-                  const SoundIcon = sound.icon;
-                  const isOn = ambientActiveIds.includes(sound.id);
-                  return (
-                    <li key={sound.id}>
-                      <button
-                        type="button"
-                        onClick={() => onToggleAmbientSound(sound.id)}
-                        aria-pressed={isOn}
-                        className="flex w-full items-center gap-3 rounded-xl px-1 py-2 text-left transition-colors hover:bg-white/5"
-                      >
-                        <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors"
-                          style={
-                            isOn
-                              ? {
-                                  borderColor: sound.accent,
-                                  color: sound.accent,
-                                  background: `color-mix(in srgb, ${sound.accent} 18%, transparent)`,
-                                }
-                              : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }
-                          }
-                        >
-                          <SoundIcon className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="flex-1 text-xs text-white">{sound.label}</span>
-                        <span
-                          className="relative h-[19px] w-[34px] shrink-0 rounded-full transition-colors"
-                          style={{
-                            background: isOn ? `color-mix(in srgb, ${sound.accent} 55%, transparent)` : "rgba(255,255,255,0.18)",
-                          }}
-                        >
-                          <span
-                            className="absolute top-0.5 h-[15px] w-[15px] rounded-full transition-transform"
-                            style={{
-                              left: 2,
-                              transform: isOn ? "translateX(15px)" : "translateX(0)",
-                              background: isOn ? sound.accent : "rgba(255,255,255,0.6)",
-                            }}
-                          />
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <AmbientSoundPicker
+                positions={ambientPositions}
+                onToggle={onToggleAmbientSound}
+                onVolumeChange={onAmbientVolumeChange}
+              />
             </section>
 
             <p className="mt-2 pt-8 text-center text-[10px] text-white/25">ⓒ 2026 cazis</p>

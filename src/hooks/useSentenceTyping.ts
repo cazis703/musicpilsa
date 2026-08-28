@@ -89,12 +89,18 @@ export function useSentenceTyping(
 
   // 톤이 바뀌면(설정 패널 조작) 지금 보여주던 문장은 그대로 두되, 톤에 맞는 텍스트로
   // 다시 시작한다 — 문장 자체를 새로 뽑지 않는다(사용자가 톤만 바꾸려 한 것이므로).
-  const isFirstToneRenderRef = useRef(true);
+  //
+  // "최초 마운트 시 1회는 건너뛴다"를 isFirstToneRenderRef 같은 1회성 플래그로 구현하면
+  // React StrictMode(개발 모드)가 마운트 이펙트를 두 번 연속 실행할 때 문제가 된다 — 플래그는
+  // ref라 두 번째 호출 시점엔 이미 false로 바뀌어 있어, 두 번째 호출이 "진짜 톤 변경"으로
+  // 오인되어 그 시점의 (아직 새 문장으로 안 바뀐) 오래된 targetText로 charStates를 덮어써
+  // 버린다 — 그 결과 화면엔 옛 문장이 남아있는데 판정 기준(targetText)은 이미 다른 문장이라
+  // 정상적으로 쳐도 오타로 표시되는 버그가 났다. previousToneRef와 "실제로 값이 달라졌는가"로
+  // 비교하면 몇 번을 연달아 호출되든 안전하다(같은 값이면 항상 스킵).
+  const previousToneRef = useRef(tone);
   useEffect(() => {
-    if (isFirstToneRenderRef.current) {
-      isFirstToneRenderRef.current = false;
-      return;
-    }
+    if (previousToneRef.current === tone) return;
+    previousToneRef.current = tone;
     if (advanceTimeoutRef.current) {
       clearTimeout(advanceTimeoutRef.current);
       advanceTimeoutRef.current = null;
